@@ -67,6 +67,7 @@ app.get("/api/health", async (_req, res) => {
 });
 
 // --------- Products ---------
+// ✅ แก้จุดนี้เพื่อรวมจำนวนสินค้า และป้องกันสินค้าแสดงซ้ำ
 const SELECT_PRODUCTS = `
   SELECT
     p.product_id,
@@ -76,9 +77,20 @@ const SELECT_PRODUCTS = `
     p.original_price,
     p.on_sale,
     COALESCE(NULLIF(p.image,''), p.image_url) AS image_url,
-    COALESCE(i.quantity, p.stock, 0) AS stock
+    COALESCE(inv.qty, p.stock, 0) AS stock
   FROM products p
-  LEFT JOIN inventory i ON p.product_id = i.product_id
+  /* เลือกสินค้า 1 ตัวต่อชื่อ (ตัวหลัก) */
+  INNER JOIN (
+    SELECT name, MIN(product_id) AS keep_id
+    FROM products
+    GROUP BY name
+  ) one ON one.keep_id = p.product_id
+  /* รวมสต็อกต่อ product_id */
+  LEFT JOIN (
+    SELECT product_id, SUM(quantity) AS qty
+    FROM inventory
+    GROUP BY product_id
+  ) inv ON inv.product_id = p.product_id
 `;
 
 app.get("/api/products", async (_req, res) => {
@@ -108,7 +120,7 @@ app.get("/api/products/new", async (req, res) => {
 app.get("/api/products/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const [[row]] = await pool.query(`${SELECT_PRODUCTS} WHERE p.product_id = ?`, [id]);
+    const [[row]] = await pool.query(`${SELECT_PRODUCTS} HAVING p.product_id = ?`, [id]);
     if (!row) return res.status(404).json({ error: "Product not found" });
     res.json(row);
   } catch (e) {
