@@ -1,0 +1,196 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* ---------- Reset เบื้องต้นให้ปุ่ม/อินพุตไม่ดูเป็นปุ่มระบบ ---------- */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Noto Sans Thai", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #fffaf2;
+  color: #1a1a1a;
+}
+
+/* รีเซ็ตปุ่ม/อินพุต */
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  outline: none;
+  background: none;
+}
+
+/* ---------- ยูทิลิตี้ ---------- */
+.container {
+  max-width: 1180px;
+  padding: 0 20px;
+  margin: 0 auto;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .7rem 1.1rem;
+  border-radius: 999px;
+  font-weight: 700;
+  background: #111;
+  color: #fff;
+  cursor: pointer;
+  transition: transform .15s ease, opacity .15s;
+}
+.btn:hover { transform: translateY(-1px); opacity: .95; }
+
+.btn-outline {
+  background: #fff;
+  color: #111;
+  border: 2px solid #e6e6e6;
+}
+.btn-orange { background: #ff8a00; color: #fff; }
+.btn-pill { border-radius: 999px; }
+
+.badge {
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width: 20px; height: 20px; padding: 0 6px;
+  border-radius: 999px; background:#e11d48; color:#fff; font-size:.75rem; font-weight:800;
+}
+
+.grid-4 {
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 1024px) { .grid-4 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .grid-4 { grid-template-columns: 1fr; } }
+
+/* card รูปแบบเดียวกับหน้า Home เดิม */
+.card {
+  background:#fff; border-radius: 18px; overflow:hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,.05);
+  border: 1px solid #f2f2f2;
+}
+.card .media { position:relative; background:#fff7e6; }
+.card .media img { width:100%; height: 260px; object-fit: cover; display:block; }
+.card .body { padding: 1rem 1.1rem 1.2rem; }
+
+.badge-float {
+  position:absolute; top:12px; right:12px;
+  background:#111; color:#fff; border-radius:999px; padding:.35rem .6rem; font-weight:800; font-size:.8rem;
+}
+.badge-sale { background:#ff8a00; }
+.badge-new  { background:#111; }
+
+/* --------- Drawer (ตะกร้าแบบสไลด์) --------- */
+.drawer-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+  z-index: 50;
+}
+.drawer-overlay.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100%;
+  width: 380px; max-width: 100%;
+  background: #fff; box-shadow: -10px 0 30px rgba(0,0,0,.08);
+  transform: translateX(100%); transition: transform .25s ease;
+  z-index: 60; display:flex; flex-direction:column;
+}
+.drawer.open { transform: none; }
+.drawer header {
+  padding: 16px 18px; border-bottom:1px solid #f0f0f0;
+  display:flex; justify-content:space-between; align-items:center; font-weight:800;
+}
+.drawer .content { flex:1; overflow:auto; padding:16px 18px; }
+.drawer footer {
+  padding: 16px 18px; border-top:1px solid #f0f0f0; background:#fff;
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+  position: sticky; top: 0; z-index: 40; background:#fff;
+  border-bottom: 1px solid #f4f0ea; backdrop-filter: saturate(180%) blur(8px);
+}
+.navbar .row {
+  height: 72px; display:flex; align-items:center; justify-content:space-between;
+  gap: 16px;
+}
+.brand {
+  display:flex; align-items:center; gap:.6rem; font-size:1.6rem; font-weight:900;
+}
+.brand .dot { width: 14px; height: 14px; background:#ffcc00; border-radius:999px; display:inline-block; }
+.nav-left, .nav-right { display:flex; align-items:center; gap: 12px; }
+.nav-main { display:flex; align-items:center; gap: 18px; margin-left: 12px; }
+.nav-link {
+  font-weight:800; color:#333; text-decoration:none; padding:.4rem .7rem; border-radius:10px;
+}
+.nav-link.active, .nav-link:hover { background:#fff2d7; }
+
+.search {
+  display:flex; align-items:center; background:#fff; border:2px solid #f0e9dc;
+  border-radius:999px; padding: .4rem .8rem; width: 320px;
+}
+.search input { width:100%; background:transparent; }
+
+.menu-pill {
+  position:relative; cursor:pointer; user-select:none;
+}
+.menu-pill .label {
+  display:flex; align-items:center; gap:.4rem; padding:.45rem .9rem;
+  border:2px solid #f0e9dc; border-radius:999px; font-weight:800;
+}
+
+/* Dropdown Shop */
+.dropdown {
+  position:absolute; top: 52px; left: 0;
+  background:#fff; border:1px solid #f2f0ea; border-radius:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+  padding: 10px; display:none; min-width: 380px;
+}
+.menu-pill:hover .dropdown { display:block; }
+
+.dropdown .cat {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border-radius:12px; cursor:pointer; text-decoration:none; color:#333;
+}
+.dropdown .cat:hover { background:#fff6e4; }
+.dropdown .cat .ico { width:30px; height:30px; display:inline-grid; place-items:center; border-radius:8px; background:#fff2d7; }

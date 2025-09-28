@@ -1,0 +1,12 @@
+.rcp{max-width:900px;margin:30px auto;padding:0 16px}
+.rcp__box{background:#fff;border:1px solid #eee;border-radius:14px;padding:18px;box-shadow:0 8px 28px rgba(0,0,0,.05)}
+.rcp h2{margin:0 0 8px}
+.rcp__tag{display:inline-block;background:#f59e0b;color:#fff;font-weight:800;padding:2px 8px;border-radius:8px;margin-bottom:8px}
+.rcp__row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #eee}
+.rcp__table{margin-top:12px;border-top:1px solid #eee}
+.rcp__thead,.rcp__tr,.rcp__tfoot{display:grid;grid-template-columns:1fr 120px 140px;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.rcp__thead{font-weight:800;color:#6b7280}
+.rcp__tfoot{font-weight:800}
+.rcp__actions{margin-top:14px;display:flex;gap:10px}
+.rcp__btn{height:40px;padding:0 14px;border-radius:10px;border:1px solid #e5e7eb;text-decoration:none;display:grid;place-items:center}
+.rcp__btn.ghost{background:#fff}

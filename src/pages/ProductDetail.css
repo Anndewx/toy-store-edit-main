@@ -1,0 +1,14 @@
+.pd{display:grid;grid-template-columns:1.1fr .9fr;gap:28px}
+@media (max-width:900px){.pd{grid-template-columns:1fr}}
+.pd__left img{width:100%;border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.08);display:block}
+.pd__title{margin:0 0 6px}
+.pd__meta{color:#6b7280;margin-bottom:8px}
+.pd__price{display:flex;align-items:center;gap:10px;margin:8px 0 14px}
+.pd__price .price{font-weight:800;font-size:22px}
+.pd__price .ori{color:#9ca3af;text-decoration:line-through}
+.pd__qty{display:flex;align-items:center;gap:8px;margin:8px 0 12px}
+.pd__qty button{width:40px;height:40px;border:0;border-radius:10px;background:#111;color:#fff;font-size:18px}
+.pd__qty input{width:80px;height:40px;border:1px solid #e5e7eb;border-radius:10px;text-align:center}
+.pd__add{height:44px;padding:0 16px;border:0;border-radius:12px;background:#ffc107;font-weight:800;cursor:pointer}
+.pd__add:hover{filter:brightness(.95)}
+.pd__desc{margin-top:14px;color:#374151}

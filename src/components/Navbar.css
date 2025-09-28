@@ -1,0 +1,62 @@
+/* --- layout --- */
+.nb {
+  position: sticky; top: 0; z-index: 50;
+  background: #0f0f0f; color: #fff; border-bottom: 1px solid #1f1f1f;
+}
+.nb__inner {
+  max-width: 1200px; margin: 0 auto; padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+
+/* --- brand --- */
+.nb__brand { color: #ffc107; font-weight: 800; text-decoration: none; font-size: 20px; }
+
+/* --- menu --- */
+.nb__menu {
+  display: flex; align-items: center; gap: 14px;
+  list-style: none; margin: 0; padding: 0;
+}
+.nb__link {
+  color: #e5e7eb; text-decoration: none; padding: 8px 10px; border-radius: 8px;
+}
+.nb__link.active, .nb__link:hover { background: #1f2937; color: #fff; }
+
+/* --- dropdown --- */
+.nb__dropdown { position: relative; }
+.nb__toggle { cursor: default; }
+.nb__drop {
+  position: absolute; top: calc(100% + 6px); left: 0;
+  background: #fff; color: #111; border: 1px solid #eee; border-radius: 12px;
+  min-width: 190px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,.12);
+  display: none;
+}
+.nb__dropdown:hover .nb__drop { display: block; }
+.nb__dropItem {
+  display: block; padding: 8px 10px; border-radius: 8px; text-decoration: none; color: #111;
+}
+.nb__dropItem:hover { background: #f5f5f5; }
+.nb__divider { height: 1px; background: #eee; margin: 6px 0; }
+
+/* --- cart button + badge --- */
+.nb__cart {
+  position: relative; background: #ffc107; color: #111;
+  padding: 8px 14px; border-radius: 12px; text-decoration: none; font-weight: 700;
+  border: none; cursor: pointer;
+}
+.nb__badge {
+  position: absolute; top: -6px; right: -6px;
+  min-width: 22px; height: 22px; line-height: 22px; padding: 0 6px;
+  border-radius: 999px; background: #ef4444; color: #fff; font-size: 12px;
+  box-shadow: 0 6px 14px rgba(239,68,68,.35); text-align: center;
+}
+
+/* --- profile + cart alignment --- */
+.nb__right {
+  display: flex; align-items: center; gap: 12px;
+}
+
+/* --- small screen --- */
+@media (max-width: 720px) {
+  .nb__menu { gap: 8px; }
+  .nb__brand { font-size: 18px; }
+}

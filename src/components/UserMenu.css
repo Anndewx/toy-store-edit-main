@@ -1,0 +1,18 @@
+.um { position: relative; }
+.um__btn { background: transparent; border: 0; cursor: pointer; }
+.um__avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #ffd166; color: #111; display: grid; place-items: center;
+  font-weight: 800; box-shadow: 0 6px 16px rgba(0,0,0,.18);
+}
+.um__menu {
+  position: absolute; right: 0; top: 40px; background: #fff;
+  border: 1px solid #eee; border-radius: 12px; width: 240px; padding: 10px;
+  box-shadow: 0 16px 36px rgba(0,0,0,.15); z-index: 30;
+}
+.um__user { display: flex; gap: 10px; align-items: center; padding: 6px 6px 10px; border-bottom: 1px solid #eee; margin-bottom: 8px; }
+.um__avatar.big { width: 36px; height: 36px; font-size: 14px; }
+.um__name { font-weight: 700; }
+.um__email { font-size: 12px; color: #6b7280; }
+.um__logout { width: 100%; height: 36px; border: 0; border-radius: 10px; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; }
+.um__logout:hover { filter: brightness(.95); }
