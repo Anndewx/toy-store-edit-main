@@ -1,0 +1,264 @@
+/* ===== THEME TOKENS (ปรับสีรวมที่นี่) ===== */
+:root{
+  --ai-bg: #0b0f14;
+  --ai-surface: #0d1219;
+  --ai-outline: rgba(253,224,71,.18);
+  --ai-outline-weak: rgba(255,255,255,.06);
+  --ai-text: #f5f7fb;
+  --ai-muted: #cbd5e1;
+
+  /* โทนเหลือง/ส้มพรีเมียม */
+  --ai-amber-1:#fde047; /* light */
+  --ai-amber-2:#f59e0b; /* mid */
+  --ai-amber-3:#fb923c; /* warm */
+
+  /* accent สำหรับราคา/สำคัญ */
+  --ai-green:#84cc16;
+  --ai-chip:#111827;
+}
+
+/* ===== ย้ายจาก sticky -> non-sticky ===== */
+.ai-sticky-wrap{
+  position: relative;   /* เดิมเป็น sticky; เปลี่ยนเป็น relative ให้ไม่ตาม scroll */
+  top: auto;
+  z-index: 1;
+  padding: 8px 0 0;
+}
+
+/* ===== AI rectangle bar (compact & centered) ===== */
+.ai-rect-bar{
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  background: linear-gradient(180deg, var(--ai-surface), #0a0f15);
+  border: 1px solid var(--ai-outline);
+  border-radius: 14px; padding: 12px 14px;
+  box-shadow:
+    0 14px 28px rgba(0,0,0,.35),
+    inset 0 0 0 1px var(--ai-outline-weak);
+  color: var(--ai-text);
+}
+.ai-rect-bar.compact.centered{ max-width:1100px; margin:0 auto; }
+
+.ai-rect-left{ display:flex; align-items:center; gap:12px; flex:1; }
+.ai-rect-avatar{
+  width:38px; height:38px; border-radius:999px; display:grid; place-items:center;
+  color:#0c1118; font-size:18px;
+  background: radial-gradient(120% 120% at 10% 10%, var(--ai-amber-1) 0%, var(--ai-amber-2) 48%, var(--ai-amber-3) 100%);
+  box-shadow:0 10px 22px rgba(245,158,11,.45);
+}
+
+.ai-rect-search{ position:relative; flex:1; }
+.ai-rect-search input{
+  width:100%;
+  padding:12px 14px 12px 40px;
+  border-radius:12px; outline:none;
+  color:var(--ai-text);
+  background:#0a0f15;
+  border:1.6px solid rgba(253,224,71,.28);
+  box-shadow: inset 0 0 0 1px var(--ai-outline-weak);
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+.ai-rect-search input::placeholder{ color:var(--ai-muted); }
+.ai-rect-search input:focus{
+  border-color: var(--ai-amber-1);
+  box-shadow:0 0 0 4px rgba(253,224,71,.12), inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.ai-rect-search-ic{
+  position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  color: var(--ai-amber-1);
+  text-shadow:0 1px 0 rgba(0,0,0,.4);
+}
+
+.ai-rect-actions{ display:flex; gap:10px; }
+.ai-btn{
+  border:0; border-radius:12px; padding:12px 16px; cursor:pointer;
+  font-weight:800; letter-spacing:.2px;
+  transition: transform .08s ease, box-shadow .12s ease, filter .1s ease;
+}
+.ai-btn.primary-y{
+  background: var(--ai-chip);
+  color: var(--ai-amber-1);
+  border:1px solid rgba(253,224,71,.55);
+  box-shadow:0 8px 20px rgba(245,158,11,.25);
+}
+.ai-btn.primary-y:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* ===== Topics row (single line) ===== */
+.ai-topics.slim.centered{
+  max-width:1100px; margin:10px auto 0;
+  display:flex; align-items:center; gap:10px; justify-content:center;
+  flex-wrap: wrap;
+}
+.topic{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px; border-radius:999px; cursor:pointer;
+  background: rgba(10,15,21,.8);
+  color: var(--ai-text);
+  border:1px solid rgba(253,224,71,.22);
+  transition:transform .08s, box-shadow .12s, background .12s, color .12s;
+  font-size:14px; white-space:nowrap;
+  backdrop-filter: blur(4px);
+}
+.topic .t-ic{ font-size:16px; line-height:1; }
+.topic:hover{
+  transform:translateY(-1px);
+  box-shadow:0 12px 22px rgba(0,0,0,.35);
+  background:#0b121a;
+}
+.topic.active{
+  background:linear-gradient(180deg, var(--ai-amber-1), var(--ai-amber-2));
+  color:#0b0f14;
+  border-color: transparent;
+}
+
+/* ===== Mini result (2 cards) ===== */
+.ai-mini-results{
+  max-width:1100px; margin:12px auto 0;
+  display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:14px;
+}
+.ai-mini-card{
+  display:flex; gap:12px; align-items:center;
+  background: linear-gradient(180deg, var(--ai-bg), #0a0f15);
+  border:1px solid #1e2836; border-radius:14px;
+  padding:10px 12px; color:var(--ai-text);
+  box-shadow:0 12px 28px rgba(0,0,0,.35);
+  position:relative;
+  overflow:hidden;
+}
+.ai-mini-card:before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  border-radius:14px;
+  box-shadow: inset 0 0 0 1px var(--ai-outline-weak);
+}
+.ai-mini-thumb{
+  width:118px; height:92px; border-radius:12px; overflow:hidden;
+  background:#0a0f15; flex:0 0 auto;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.ai-mini-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+.ai-mini-body{ display:flex; flex-direction:column; gap:6px; flex:1; min-width:0; }
+.ai-mini-name{
+  font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ai-mini-price{ color:var(--ai-green); font-weight:900; }
+
+/* badge แบบแคปซูลพร้อมไอคอน */
+.ai-mini-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px;
+  font-size:12px; color:#0c1118; font-weight:800;
+  background: linear-gradient(180deg, var(--ai-amber-1), var(--ai-amber-2));
+  width:max-content;
+}
+.ai-mini-badge:before{ content:"✨"; }
+
+/* skeleton */
+.skeleton{ background:#0f1319; border-radius:14px; border:1px solid #1f2937; }
+
+/* helper text */
+.ytext{ color:var(--ai-amber-1); font-weight:800; text-align:center; padding:8px 0; }
+
+@media (max-width:720px){
+  .ai-mini-results{ grid-template-columns: 1fr; }
+}
+
+/* ===== Category Row (กลมกลืนกับธีม AI) ===== */
+.cat-row.centered{
+  max-width: 1100px;
+  margin: 18px auto 10px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+}
+
+.cat-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(253,224,71,.22);
+  background: linear-gradient(180deg, #0d1219, #0a0f15);
+  color: var(--ai-text);
+  box-shadow:
+    0 8px 20px rgba(0,0,0,.25),
+    inset 0 0 0 1px var(--ai-outline-weak);
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.cat-ic{
+  font-size: 17px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 0 rgba(0,0,0,.4));
+}
+.cat-txt{
+  font-weight: 800;
+  letter-spacing: .15px;
+}
+
+.cat-pill:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0,0,0,.35);
+  background: #0b121a;
+}
+
+.cat-pill:active{
+  transform: translateY(0px) scale(.99);
+}
+
+/* mobile */
+@media (max-width: 720px){
+  .cat-row.centered{
+    gap: 10px;
+    padding: 0 8px;
+  }
+  .cat-pill{ padding: 10px 12px; }
+  .cat-txt{ font-weight: 800; }
+}
+
+/* ===== Mini card: action button (Add to cart) ===== */
+.ai-mini-actions{
+  margin-top: 6px;
+}
+.add-btn{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px;
+  border-radius:12px;
+  border:1px solid rgba(253,224,71,.55);
+  background: #111827;
+  color: #fde047;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(245,158,11,.25);
+  transition: transform .08s ease, filter .12s ease, box-shadow .12s ease;
+}
+.add-btn:hover{
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* ===== Tiny toast (feedback เมื่อเพิ่มตะกร้า) ===== */
+.ai-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%) translateY(12px);
+  padding:10px 14px;
+  border-radius: 12px;
+  border:1px solid rgba(253,224,71,.35);
+  background: #0b0f14;
+  color:#f5f7fb;
+  box-shadow:0 12px 28px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.04);
+  opacity:0; pointer-events:none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 60;
+}
+.ai-toast.show{
+  opacity:1; transform: translateX(-50%) translateY(0);
+}

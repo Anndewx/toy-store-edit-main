@@ -1,0 +1,560 @@
+.ts-hero-wrap{max-width:1200px;margin:0 auto;padding:12px 16px 0}
+.ts-hero{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.ts-hero-left{position:relative;border-radius:14px;overflow:hidden;background:#f3f4f6;height:240px}
+.ts-hero-slide{position:absolute;inset:0;opacity:0;transition:opacity .4s ease;display:flex}
+.ts-hero-slide.active{opacity:1}
+.ts-hero-slide img{width:100%;height:100%;object-fit:cover}
+.ts-hero-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.ts-hero-dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.1)}
+.ts-hero-dot.active{background:#fff}
+.ts-hero-right{display:grid;grid-template-rows:1fr 1fr;gap:12px}
+.ts-hero-card{border-radius:14px;overflow:hidden;border:1px solid #e5e7eb;background:#fff;display:grid;grid-template-columns:1.2fr 1fr}
+.ts-hero-card img{width:100%;height:100%;object-fit:cover}
+.ts-hero-card__body{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.ts-hero-card__title{font-weight:700}
+.ts-hero-card__price{font-weight:800;color:#16a34a}
+.ts-hero-card__tag{display:inline-block;font-size:12px;padding:2px 6px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-weight:700}
+.ts-cats{margin:12px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:10px}
+.ts-cat{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform .08s,box-shadow .08s}
+.ts-cat:hover{transform:translateY(-1px);box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.ts-cat__icon{font-size:22px;line-height:1}
+.ts-cat__label{font-size:14px;color:#0f172a}
+@media (max-width:960px){.ts-hero{grid-template-columns:1fr}.ts-hero-left{height:200px}.ts-hero-right{grid-template-columns:1fr 1fr;grid-template-rows:none}}
+@media (max-width:560px){.ts-hero-right{grid-template-columns:1fr}.ts-hero-left{height:180px}}
+/* =============== HERO SECTION =============== */
+.ts-hero-wrap {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 1rem auto;
+}
+
+.ts-hero-left {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.ts-hero-img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  display: block;
+}
+
+.ts-hero-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+  color: #fff;
+  padding: 1rem;
+}
+
+.ts-hero-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ts-hero-card {
+  display: flex;
+  background: #fff;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.ts-hero-card:hover {
+  transform: translateY(-3px);
+}
+
+.ts-hero-card-img-wrap {
+  width: 40%;
+  overflow: hidden;
+}
+
+.ts-hero-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ts-hero-card-body {
+  padding: 0.5rem 0.75rem;
+  flex: 1;
+}
+
+.ts-hero-card-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.ts-hero-card-price {
+  font-size: 0.9rem;
+  color: green;
+  font-weight: 600;
+}
+
+/* =============== CATEGORY ROW =============== */
+.ts-category-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.25rem auto 1.5rem;
+  max-width: 1200px;
+}
+
+.ts-category-btn {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.ts-category-btn:hover {
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+}
+
+.ts-category-icon {
+  font-size: 1.3rem;
+}
+
+/* skeleton ง่ายๆ */
+.skeleton { background: #f1f5f9; border-radius: 12px; min-height: 120px; }
+
+/* เผื่อ margin-top ของ category ไม่ทับกันเมื่อไม่มี hero */
+.ts-category-row { margin-top: 12px; }
+
+/* ====== AI Toolbar ====== */
+.ai-wrap { max-width: 1200px; margin: 0 auto; padding: 8px 16px 0; }
+.ai-toolbar {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.04);
+  margin-bottom: 12px;
+}
+.ai-badge {
+  display: inline-block; font-weight: 700; font-size: 14px;
+  background: #eef2ff; color: #3730a3;
+  border: 1px solid #c7d2fe; border-radius: 999px; padding: 4px 10px;
+}
+.ai-prompt { display: flex; gap: 8px; margin-top: 10px; }
+.ai-prompt input {
+  flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px;
+  outline: none;
+}
+.ai-btn { border: 0; border-radius: 10px; padding: 10px 14px; cursor: pointer; background:#111827; color:#fff; }
+.ai-btn.ghost { background:#f3f4f6; color:#111827; }
+
+.ai-chips { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.chip {
+  border:1px solid #e5e7eb; background:#f9fafb; border-radius:999px; padding:6px 12px; cursor:pointer;
+}
+.chip.active { background:#111827; color:#fff; }
+
+/* ====== AI hero enhancements ====== */
+.ai-hero .ts-hero-left { position: relative; }
+.ai-row { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+.ai-tag { background:#0ea5e9; color:#fff; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:700; }
+.ai-conf { position: relative; font-size:12px; color:#e5e7eb; padding-left:90px; }
+.ai-conf::before {
+  content:""; position:absolute; left:0; top:5px; width:80px; height:6px; border-radius:999px; background:#11182780;
+}
+.ai-conf-bar {
+  position:absolute; left:0; top:5px; height:6px; border-radius:999px; background:#22c55e;
+}
+.ai-why { color:#e5e7eb; opacity:.9; }
+
+.ai-arrow {
+  position:absolute; top:50%; transform:translateY(-50%);
+  background:rgba(0,0,0,.35); color:#fff; border:0; width:34px; height:34px; border-radius:999px; cursor:pointer;
+}
+.ai-arrow.left { left:10px; } .ai-arrow.right{ right:10px; }
+
+.ai-dots { position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+.ai-dots .dot { width:8px; height:8px; border-radius:999px; background:#ffffff80; cursor:pointer; }
+.ai-dots .dot.active { background:#fff; }
+
+/* skeleton */
+.skeleton { background:#f3f4f6; border-radius:12px; min-height:120px; }
+
+/* ===== Container */
+.ai-wrap { max-width:1200px; margin:0 auto; padding:8px 16px 0; }
+
+/* ===== Toolbar ใหม่ (สีสัน + กรอบ) */
+.ai-toolbar {
+  background:#fff; border:1px solid #e5e7eb; border-radius:16px;
+  padding:12px; box-shadow:0 6px 24px rgba(0,0,0,.05); margin-bottom:12px;
+}
+.ai-toolbar.fancy { border:1px solid #e9e4ff; background:linear-gradient(180deg,#ffffff,#fafbff); }
+
+.ai-left { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.ai-avatar {
+  width:34px; height:34px; border-radius:999px; display:grid; place-items:center;
+  background: radial-gradient(105% 105% at 10% 10%, #a78bfa 0%, #60a5fa 40%, #22d3ee 100%);
+  color:#fff; font-size:18px; box-shadow:0 6px 16px rgba(96,165,250,.35);
+}
+.ai-title { font-weight:800; color:#111827; }
+
+/* Prompt box (มีกรอบ gradient) */
+.ai-prompt { display:flex; gap:8px; }
+.ai-prompt.fancy input {
+  flex:1; border:0; padding:12px 14px; border-radius:12px; outline:none;
+  background:
+    linear-gradient(#fff,#fff) padding-box,
+    linear-gradient(120deg,#a78bfa,#60a5fa,#22d3ee) border-box;
+  border:2px solid transparent;
+}
+.ai-btn { border:0; border-radius:12px; padding:12px 14px; cursor:pointer; }
+.ai-btn.primary { background:#0f172a; color:#fff; }
+.ai-btn.ghost { background:#f3f4f6; color:#0f172a; }
+
+/* Colored chips */
+.ai-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.chip {
+  border-radius:999px; padding:8px 12px; border:1px solid #e5e7eb; background:#f9fafb;
+  font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px;
+  transition:transform .1s, box-shadow .1s;
+}
+.chip .em { font-size:16px; line-height:1; }
+.chip:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.08); }
+.chip.active { color:#fff; box-shadow:0 8px 24px rgba(0,0,0,.15); border-color:transparent; }
+
+/* สีของชิป */
+.chip-pop   { background:linear-gradient(180deg,#fde68a,#f59e0b); }
+.chip-sale  { background:linear-gradient(180deg,#fb7185,#f43f5e); }
+.chip-new   { background:linear-gradient(180deg,#a78bfa,#7c3aed); }
+.chip-gun   { background:linear-gradient(180deg,#60a5fa,#3b82f6); }
+.chip-anime { background:linear-gradient(180deg,#34d399,#10b981); }
+.chip-game  { background:linear-gradient(180deg,#fca5a5,#ef4444); }
+.chip:not(.active){ color:#111827; }
+
+/* ===== Hero (ของเดิม + แต่งเพิ่มนิดหน่อย) */
+.ts-hero-wrap { display:grid; grid-template-columns:2fr 1fr; gap:1rem; margin:12px auto; }
+.ts-hero-left { position:relative; overflow:hidden; border-radius:16px; }
+.ts-hero-img { width:100%; height:300px; object-fit:cover; display:block; }
+.ts-hero-overlay{ position:absolute; inset:auto 0 0 0; padding:16px;
+  background:linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0));
+  color:#fff; }
+
+.ts-hero-right { display:flex; flex-direction:column; gap:.75rem; }
+.ts-hero-card { display:flex; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #eef2f7; }
+.ts-hero-card.elevate { box-shadow:0 6px 18px rgba(0,0,0,.06); }
+.ts-hero-card-img-wrap{ width:40%; overflow:hidden; }
+.ts-hero-card-img{ width:100%; height:100%; object-fit:cover; }
+.ts-hero-card-body{ padding:.6rem .8rem; }
+.ts-hero-card-title{ font-weight:700; margin-bottom:.25rem; }
+.ts-hero-card-price{ color:#16a34a; font-weight:800; }
+
+/* AI labels */
+.ai-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.ai-tag{ background:#0ea5e9; color:#fff; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:800; }
+.ai-why{ opacity:.95; color:#e5e7eb; }
+.ai-conf{ position:relative; font-size:12px; padding-left:90px; color:#e5e7eb; }
+.ai-conf::before{ content:""; position:absolute; left:0; top:5px; width:80px; height:6px; border-radius:999px; background:#ffffff55; }
+.ai-conf-bar{ position:absolute; left:0; top:5px; height:6px; border-radius:999px; background:#22c55e; }
+
+/* Arrows & dots */
+.ai-arrow{ position:absolute; top:50%; transform:translateY(-50%);
+  background:rgba(0,0,0,.4); color:#fff; border:0; width:34px; height:34px; border-radius:999px; cursor:pointer; }
+.ai-arrow.left{ left:10px; } .ai-arrow.right{ right:10px; }
+.ai-dots{ position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+.ai-dots .dot{ width:8px; height:8px; border-radius:999px; background:#ffffff80; cursor:pointer; }
+.ai-dots .dot.active{ background:#fff; }
+
+/* Skeleton */
+.skeleton { background:#f3f4f6; border-radius:12px; min-height:120px; }
+
+/* Responsive */
+@media (max-width:960px){
+  .ts-hero-wrap{ grid-template-columns:1fr; }
+  .ts-hero-img{ height:240px; }
+}
+
+/* ===== Container กลางของ AI ===== */
+.ai-container{ max-width:1100px; margin:0 auto; padding:8px 16px 0; }
+.ai-card{
+  border-radius:18px; padding:14px; margin-bottom:12px;
+  background:linear-gradient(180deg,#ffffff 0%,#fafbff 100%);
+  border:1px solid #ebe9ff;
+  box-shadow:0 10px 30px rgba(86,96,255,.08);
+}
+
+/* หัวการ์ด */
+.ai-head{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+.ai-avatar{
+  width:40px;height:40px;border-radius:999px;display:grid;place-items:center;
+  color:#fff;font-size:20px;
+  background:radial-gradient(110% 110% at 10% 10%,#a78bfa 0%,#60a5fa 45%,#22d3ee 100%);
+  box-shadow:0 8px 26px rgba(96,165,250,.35);
+}
+/* ช่องค้นหาแบบมีกรอบสี */
+.ai-search{ position:relative; }
+.ai-search input{
+  width:100%; padding:12px 14px 12px 42px; border-radius:12px; outline:none; border:0;
+  background:linear-gradient(#fff,#fff) padding-box,
+             linear-gradient(120deg,#a78bfa,#60a5fa,#22d3ee) border-box;
+  border:2px solid transparent;
+}
+.ai-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.75 }
+
+.ai-actions{ display:flex; gap:8px; }
+.ai-btn{ border:0; border-radius:12px; padding:12px 14px; cursor:pointer; }
+.ai-btn.primary{ background:#0f172a; color:#fff; }
+.ai-btn.ghost{ background:#f3f4f6; color:#0f172a; }
+
+/* chips มีสี */
+.ai-chips{ display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 6px; }
+.chip{
+  border-radius:999px; padding:10px 14px; border:1px solid #e6e7ef; background:#f9fafb;
+  font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:transform .09s, box-shadow .09s;
+}
+.chip .em{ font-size:16px }
+.chip:hover{ transform:translateY(-1px); box-shadow:0 8px 18px rgba(0,0,0,.08); }
+.chip.active{ color:#fff; box-shadow:0 10px 22px rgba(0,0,0,.15); border-color:transparent; }
+.chip-pop{  background:linear-gradient(180deg,#fde68a,#f59e0b); }
+.chip-sale{ background:linear-gradient(180deg,#fb7185,#f43f5e); }
+.chip-new{  background:linear-gradient(180deg,#a78bfa,#7c3aed); }
+.chip-gun{  background:linear-gradient(180deg,#60a5fa,#3b82f6); }
+.chip-anime{background:linear-gradient(180deg,#34d399,#10b981); }
+.chip-game{ background:linear-gradient(180deg,#fca5a5,#ef4444); }
+.chip:not(.active){ color:#111827; }
+
+/* hero (ใช้ของเดิม + แต่งนิดหน่อย) */
+.ts-hero-wrap{ display:grid; grid-template-columns:2fr 1fr; gap:1rem; margin:10px 0 2px; }
+.ts-hero-left{ position:relative; overflow:hidden; border-radius:16px; }
+.ts-hero-img{ width:100%; height:300px; object-fit:cover; display:block; }
+.ts-hero-overlay{ position:absolute; inset:auto 0 0 0; padding:16px;
+  background:linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0)); color:#fff; }
+
+.ts-hero-right{ display:flex; flex-direction:column; gap:.75rem; }
+.ts-hero-card{ display:flex; background:#fff; border-radius:12px; overflow:hidden; border:1px solid #eef2f7; }
+.ts-hero-card.elevate{ box-shadow:0 6px 18px rgba(0,0,0,.06); }
+.ts-hero-card-img-wrap{ width:40%; overflow:hidden; }
+.ts-hero-card-img{ width:100%; height:100%; object-fit:cover; }
+.ts-hero-card-body{ padding:.6rem .8rem; }
+.ts-hero-card-title{ font-weight:800; margin-bottom:.25rem; }
+.ts-hero-card-price{ color:#16a34a; font-weight:900; }
+
+/* labels */
+.ai-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.ai-tag{ background:#0ea5e9; color:#fff; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:800; }
+.ai-why{ opacity:.95; color:#e5e7eb; }
+.ai-conf{ position:relative; font-size:12px; padding-left:90px; color:#e5e7eb; }
+.ai-conf::before{ content:""; position:absolute; left:0; top:5px; width:80px; height:6px; border-radius:999px; background:#ffffff55; }
+.ai-conf-bar{ position:absolute; left:0; top:5px; height:6px; border-radius:999px; background:#22c55e; }
+
+/* arrows & dots */
+.ai-arrow{ position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.4); color:#fff; border:0; width:34px; height:34px; border-radius:999px; cursor:pointer; }
+.ai-arrow.left{ left:10px } .ai-arrow.right{ right:10px }
+.ai-dots{ position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+.ai-dots .dot{ width:8px; height:8px; border-radius:999px; background:#ffffff80; cursor:pointer; }
+.ai-dots .dot.active{ background:#fff }
+
+/* empty */
+.ai-empty{ padding:16px; text-align:center; color:#6b7280 }
+
+/* skeleton */
+.skeleton{ background:#f3f4f6; border-radius:12px; min-height:120px }
+
+/* responsive */
+@media (max-width:960px){
+  .ai-head{ grid-template-columns:1fr; gap:8px }
+  .ts-hero-wrap{ grid-template-columns:1fr }
+  .ts-hero-img{ height:240px }
+}
+
+/* ===== Container กลางของ AI ===== */
+.ai-container{ max-width:1100px; margin:0 auto; padding:8px 16px 0; }
+
+/* การ์ดธีมดำ-เหลือง */
+.ai-card{
+  border-radius:18px; padding:14px; margin-bottom:12px;
+  background:linear-gradient(180deg,#0b0f14 0%, #0f1319 100%);
+  border:1px solid rgba(253,224,71,.12);
+  box-shadow:0 16px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+}
+.ai-card.dark{ background:linear-gradient(180deg,#0b0f14 0%, #0f1319 100%); }
+
+/* หัวการ์ด */
+.ai-head{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+.ai-avatar{
+  width:40px;height:40px;border-radius:999px;display:grid;place-items:center;
+  color:#111827;font-size:20px;
+  background: radial-gradient(105% 105% at 10% 10%, #fde047 0%, #f59e0b 45%, #fb923c 100%);
+  box-shadow:0 8px 26px rgba(245,158,11,.35);
+}
+.ai-avatar.dark{ color:#111827; }
+
+.ai-search{ position:relative; }
+.ai-search input{
+  width:100%; padding:12px 14px 12px 42px; border-radius:12px; outline:none;
+  color:#e5e7eb; background:#0a0f15; border:2px solid rgba(253,224,71,.25);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.ai-search input::placeholder{ color:#9ca3af }
+.ai-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.75 }
+
+.ai-actions{ display:flex; gap:8px; }
+.ai-btn{ border:0; border-radius:12px; padding:12px 14px; cursor:pointer; }
+.ai-btn.primary-y{ background:#111827; color:#fde047; border:1px solid rgba(253,224,71,.4); }
+.ai-btn.ghost-d{ background:#0a0f15; color:#e5e7eb; border:1px solid #1f2937; }
+
+/* chips ดำ-เหลือง */
+.ai-chips{ display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 6px; }
+.chip{
+  border-radius:999px; padding:10px 14px; border:1px solid rgba(253,224,71,.25); 
+  background:#0a0f15; color:#e5e7eb;
+  font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px;
+  transition:transform .09s, box-shadow .09s, background .09s;
+}
+.chip .em{ font-size:16px }
+.chip:hover{ transform:translateY(-1px); box-shadow:0 10px 22px rgba(0,0,0,.35); }
+.chip.active{ color:#111827; box-shadow:0 10px 22px rgba(0,0,0,.45); border-color:transparent; }
+
+/* โทนสีชิป */
+.chip-pop.active   { background:linear-gradient(180deg,#fde047,#f59e0b); }
+.chip-sale.active  { background:linear-gradient(180deg,#fb7185,#f43f5e); }
+.chip-new.active   { background:linear-gradient(180deg,#a78bfa,#7c3aed); }
+.chip-gun.active   { background:linear-gradient(180deg,#60a5fa,#3b82f6); }
+.chip-anime.active { background:linear-gradient(180deg,#34d399,#10b981); }
+.chip-game.active  { background:linear-gradient(180deg,#fca5a5,#ef4444); }
+
+/* hero (เดิม + ปรับให้อ่านง่ายบนพื้นมืด) */
+.ts-hero-wrap{ display:grid; grid-template-columns:2fr 1fr; gap:1rem; margin:10px 0 2px; }
+.ts-hero-left{ position:relative; overflow:hidden; border-radius:16px; }
+.ts-hero-img{ width:100%; height:300px; object-fit:cover; display:block; }
+.ts-hero-overlay{ position:absolute; inset:auto 0 0 0; padding:16px;
+  background:linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); color:#fff; }
+
+.ts-hero-right{ display:flex; flex-direction:column; gap:.75rem; }
+.ts-hero-card{ display:flex; background:#0b0f14; border-radius:12px; overflow:hidden; border:1px solid #1f2937; }
+.ts-hero-card.elevate{ box-shadow:0 10px 26px rgba(0,0,0,.35); }
+.ts-hero-card-img-wrap{ width:40%; overflow:hidden; }
+.ts-hero-card-img{ width:100%; height:100%; object-fit:cover; }
+.ts-hero-card-body{ padding:.6rem .8rem; color:#e5e7eb; }
+.ts-hero-card-title{ font-weight:800; margin-bottom:.25rem; }
+.ts-hero-card-price{ color:#84cc16; font-weight:900; }
+
+/* labels */
+.ai-row{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+.ai-tag{ background:#0ea5e9; color:#fff; border-radius:999px; padding:2px 8px; font-size:12px; font-weight:800; }
+.ai-tag.y{ background:#f59e0b; color:#111827; }
+.ai-why{ opacity:.95; color:#e5e7eb; }
+.ai-conf{ position:relative; font-size:12px; padding-left:90px; color:#e5e7eb; }
+.ai-conf::before{ content:""; position:absolute; left:0; top:5px; width:80px; height:6px; border-radius:999px; background:#ffffff55; }
+.ai-conf-bar{ position:absolute; left:0; top:5px; height:6px; border-radius:999px; background:#22c55e; }
+
+/* arrows & dots */
+.ai-arrow{ position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,.55); color:#fff; border:0; width:34px; height:34px; border-radius:999px; cursor:pointer; }
+.ai-arrow.left{ left:10px } .ai-arrow.right{ right:10px }
+.ai-dots{ position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:6px; }
+.ai-dots .dot{ width:8px; height:8px; border-radius:999px; background:#ffffff60; cursor:pointer; }
+.ai-dots .dot.active{ background:#fde047 }
+
+/* empty */
+.ai-empty{ padding:16px; text-align:center; color:#e5e7eb }
+.ytext{ color:#fde047 }
+
+/* skeleton */
+.skeleton{ background:#0f1319; border-radius:12px; min-height:120px; border:1px solid #1f2937 }
+
+/* responsive */
+@media (max-width:960px){
+  .ai-head{ grid-template-columns:1fr; gap:8px }
+  .ts-hero-wrap{ grid-template-columns:1fr }
+  .ts-hero-img{ height:240px }
+}
+
+/* ===== Container */
+.ai-container{ max-width:1100px; margin:0 auto; padding:8px 16px 0; }
+
+/* ===== Card ธีมดำ-เหลือง */
+.ai-card{
+  border-radius:18px; padding:14px; margin-bottom:12px;
+  background:linear-gradient(180deg,#0b0f14 0%, #0f1319 100%);
+  border:1px solid rgba(253,224,71,.12);
+  box-shadow:0 16px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.02);
+  color:#e5e7eb;
+}
+
+/* แถวค้นหา */
+.ai-head{ display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; }
+.ai-avatar{
+  width:40px;height:40px;border-radius:999px;display:grid;place-items:center;
+  color:#111827;font-size:20px;
+  background: radial-gradient(105% 105% at 10% 10%, #fde047 0%, #f59e0b 45%, #fb923c 100%);
+  box-shadow:0 8px 26px rgba(245,158,11,.35);
+}
+.ai-search{ position:relative; }
+.ai-search input{
+  width:100%; padding:12px 14px 12px 42px; border-radius:12px; outline:none;
+  color:#e5e7eb; background:#0a0f15; border:2px solid rgba(253,224,71,.25);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+}
+.ai-search input::placeholder{ color:#9ca3af }
+.ai-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:.75 }
+
+.ai-actions{ display:flex; gap:8px; }
+.ai-btn{ border:0; border-radius:12px; padding:12px 14px; cursor:pointer; }
+.ai-btn.primary-y{ background:#111827; color:#fde047; border:1px solid rgba(253,224,71,.4); }
+.ai-btn.ghost-d{ background:#0a0f15; color:#e5e7eb; border:1px solid #1f2937; }
+
+/* ===== หัวข้อสไตล์ AI (อ่านง่าย) ===== */
+.ai-topics{ display:flex; flex-wrap:wrap; gap:10px; margin:12px 0 6px; }
+.topic{
+  display:flex; align-items:center; gap:8px;
+  padding:10px 14px; border-radius:999px; cursor:pointer;
+  background:#0a0f15; color:#e5e7eb; border:1px solid rgba(253,224,71,.25);
+  transition:transform .08s, box-shadow .08s, background .08s;
+}
+.topic .t-ic{ font-size:16px; line-height:1; }
+.topic:hover{ transform:translateY(-1px); box-shadow:0 10px 20px rgba(0,0,0,.35); }
+.topic.active{ background:linear-gradient(180deg,#fde047,#f59e0b); color:#111827; border-color:transparent; }
+
+/* ===== ผลลัพธ์แบบ Grid ===== */
+.ai-grid{ display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:14px; margin-top:10px; }
+.ai-grid.loading{ grid-template-columns: repeat(4,minmax(0,1fr)); }
+.ai-item{
+  background:#0b0f14; border:1px solid #1f2937; border-radius:12px;
+  overflow:hidden; box-shadow:0 8px 22px rgba(0,0,0,.35);
+}
+.ai-thumb{ position:relative; aspect-ratio: 4 / 3; background:#0a0f15; }
+.ai-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+.ai-badge{
+  position:absolute; left:8px; top:8px; background:#fde047; color:#111827;
+  font-weight:800; font-size:12px; padding:2px 8px; border-radius:999px;
+}
+.ai-meta{ padding:10px 12px; }
+.ai-name{ font-weight:800; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ai-price{ color:#84cc16; font-weight:900; }
+.ai-why{ color:#cbd5e1; font-size:12px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* empty */
+.ai-empty{ padding:16px; text-align:center; color:#e5e7eb }
+.ytext{ color:#fde047 }
+
+/* skeleton */
+.skeleton{ background:#0f1319; border-radius:12px; min-height:160px; border:1px solid #1f2937 }
+
+/* responsive */
+@media (max-width:1100px){ .ai-grid{ grid-template-columns: repeat(3,minmax(0,1fr)); } }
+@media (max-width:780px){  .ai-head{ grid-template-columns:1fr; gap:8px } .ai-grid{ grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width:480px){  .ai-grid{ grid-template-columns: 1fr; } }

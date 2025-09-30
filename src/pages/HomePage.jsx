@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../components/ProductCard";
 import { fetchProducts } from "../lib/api";
+import AISearchSection from "../components/AISearchSection";   // ✅ ใช้แทบ AI แบบใหม่ (บาง/กึ่งกลาง/Sticky)
+import CategoryRow from "../components/CategoryRow";
 
 export default function HomePage() {
   const [allItems, setAllItems] = useState([]);
@@ -37,30 +39,49 @@ export default function HomePage() {
 
   const featured = useMemo(() => {
     const arr = [...allItems];
-    arr.sort((a,b) => (b?.on_sale?1:0) - (a?.on_sale?1:0) || Number(a?.price ?? 0) - Number(b?.price ?? 0));
+    arr.sort(
+      (a, b) =>
+        (b?.on_sale ? 1 : 0) - (a?.on_sale ? 1 : 0) ||
+        Number(a?.price ?? 0) - Number(b?.price ?? 0)
+    );
     return arr;
   }, [allItems]);
 
   const skeletons = Array.from({ length: 8 });
 
   return (
-    <div className="container-narrow" style={{ paddingTop: 24 }}>
-      <h2 className="mb-3 text-dark">สินค้าแนะนำ</h2>
-      {err && <div className="alert alert-warning mb-3">{err}</div>}
-      <div className="grid-products">
-        {(loading ? skeletons : featured).map((p,i) => (
-          <ProductCard key={`${p?.product_id ?? "s"}-${i}`} product={p} loading={loading} />
-        ))}
-      </div>
+    <>
+      {/* ===== AI Search Bar (ใหม่) + CATEGORY ICON ROW ===== */}
+      <AISearchSection />
+      <CategoryRow />
 
-      <section style={{ marginTop: 40 }}>
-        <h2 className="mb-3 text-dark">สินค้ามาใหม่</h2>
+      {/* ===== เนื้อหาเดิมของคุณ ===== */}
+      <div className="container-narrow" style={{ paddingTop: 24 }}>
+        <h2 className="mb-3 text-dark">สินค้าแนะนำ</h2>
+        {err && <div className="alert alert-warning mb-3">{err}</div>}
         <div className="grid-products">
-          {(loading ? skeletons : newItems).map((p,i) => (
-            <ProductCard key={`${p?.product_id ?? "n"}-${i}`} product={p} loading={loading} />
+          {(loading ? skeletons : featured).map((p, i) => (
+            <ProductCard
+              key={`${p?.product_id ?? "s"}-${i}`}
+              product={p}
+              loading={loading}
+            />
           ))}
         </div>
-      </section>
-    </div>
+
+        <section style={{ marginTop: 40 }}>
+          <h2 className="mb-3 text-dark">สินค้ามาใหม่</h2>
+          <div className="grid-products">
+            {(loading ? skeletons : newItems).map((p, i) => (
+              <ProductCard
+                key={`${p?.product_id ?? "n"}-${i}`}
+                product={p}
+                loading={loading}
+              />
+            ))}
+          </div>
+        </section>
+      </div>
+    </>
   );
 }
