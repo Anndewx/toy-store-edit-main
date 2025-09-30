@@ -63,6 +63,17 @@ export default function ProductCard({ product, loading }) {
 
   const imgSrc = resolveImageSrc(product);
 
+  // ✅ เพิ่มเฉพาะ: เช็ก token ก่อนเพิ่มตะกร้า
+  function handleAddToCart() {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า");
+      window.location.href = "/login";
+      return;
+    }
+    add(product_id, 1);
+  }
+
   return (
     <div className="p-card">
       <Link to={`/product/${product_id}`} className="p-thumb" title={name}>
@@ -98,7 +109,8 @@ export default function ProductCard({ product, loading }) {
           )}
         </div>
 
-        <button className="btn-primary" onClick={() => add(product_id, 1)} disabled={stock === 0}>
+        {/* ✅ เปลี่ยน onClick ให้เรียก handler ที่เช็ก token ก่อน */}
+        <button className="btn-primary" onClick={handleAddToCart} disabled={stock === 0}>
           {stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
         </button>
       </div>

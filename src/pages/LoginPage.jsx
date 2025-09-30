@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ เพิ่ม
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -6,13 +7,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const navigate = useNavigate(); // ✅ เพิ่ม
 
   async function handleLogin(e) {
     e.preventDefault();
     setBusy(true);
     setError("");
 
-    // 1) พยายามยิง API จริงก่อน (ปรับ URL/payload ให้ตรงกับ backend ของคุณ)
     try {
       const res = await fetch("/api/login", {
         method: "POST",
@@ -20,39 +21,34 @@ export default function LoginPage() {
         body: JSON.stringify({ username, email, password }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.token && data?.user) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              // เผื่อ backend ส่ง field ไม่ครบ เราประกอบให้
-              name: data.user.name || data.user.username || username || email?.split("@")[0],
-              username: data.user.username || username || "",
-              email: data.user.email || email,
-              role: data.user.role || "user",
-              avatar: data.user.avatar || "",
-            })
-          );
-          window.dispatchEvent(new Event("user-changed"));
-          window.location.href = "/";
-          return;
-        }
+      if (!res.ok) {
+        const msg = (await res.text()) || `HTTP ${res.status}`;
+        throw new Error(msg);
       }
-      throw new Error("fallback to demo");
-    } catch {
-      // 2) โหมดเดโม (ไม่ต้องมี backend)
-      const demoUser = {
-        name: username || email?.split("@")[0] || "Guest",
-        username: username || "guest",
-        email: email || "guest@example.com",
-        role: "user",
-      };
-      localStorage.setItem("token", "demo-token");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-      window.dispatchEvent(new Event("user-changed"));
-      window.location.href = "/";
+
+      const data = await res.json();
+      if (data?.token && data?.user) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: data.user.name || data.user.username || username || email?.split("@")[0],
+            username: data.user.username || username || "",
+            email: data.user.email || email,
+            role: data.user.role || "user",
+            avatar: data.user.avatar || "",
+          })
+        );
+        // แจ้งให้ AuthContext รู้ว่ามีการเปลี่ยนแปลง session
+        window.dispatchEvent(new Event("user-changed"));
+        // ✅ ใช้ SPA navigate แทน href เพื่อให้ state อัปเดตแน่นอน
+        navigate("/", { replace: true });
+        return;
+      }
+
+      throw new Error("ข้อมูลตอบกลับไม่ถูกต้อง");
+    } catch (err) {
+      setError(`เข้าสู่ระบบไม่สำเร็จ: ${err.message || ""}`);
     } finally {
       setBusy(false);
     }
@@ -72,6 +68,7 @@ export default function LoginPage() {
           boxShadow: "0 8px 24px rgba(0,0,0,.05)",
         }}
       >
+        {/* form เดิมทั้งหมดคงไว้ */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
           <label>Username (ไม่บังคับ)</label>
           <input
@@ -107,7 +104,16 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div style={{ color: "#b91c1c", background: "#fee2e2", border: "1px solid #fecaca", padding: 8, borderRadius: 8, marginBottom: 10 }}>
+          <div
+            style={{
+              color: "#b91c1c",
+              background: "#fee2e2",
+              border: "1px solid #fecaca",
+              padding: 8,
+              borderRadius: 8,
+              marginBottom: 10,
+            }}
+          >
             {error}
           </div>
         )}
@@ -115,15 +121,21 @@ export default function LoginPage() {
         <button
           disabled={busy}
           style={{
-            width: "100%", height: 44, border: 0, borderRadius: 12,
-            background: "#111", color: "#fff", fontWeight: 800, cursor: "pointer",
+            width: "100%",
+            height: 44,
+            border: 0,
+            borderRadius: 12,
+            background: "#111",
+            color: "#fff",
+            fontWeight: 800,
+            cursor: "pointer",
           }}
         >
           {busy ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
         </button>
 
         <p style={{ color: "#6b7280", fontSize: 12, marginTop: 10, textAlign: "center" }}>
-          * หาก backend ยังไม่พร้อม ระบบจะเข้าสู่โหมดเดโมโดยอัตโนมัติ
+          * ต้องใช้บัญชีที่สมัครไว้เท่านั้น
         </p>
 
         <div style={{ marginTop: 8, textAlign: "center" }}>

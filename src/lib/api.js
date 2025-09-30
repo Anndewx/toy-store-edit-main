@@ -1,16 +1,16 @@
 // src/lib/api.js
 
-function authHeaders() {
+function authHeaders(extra = {}) {
   const token = localStorage.getItem("token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : { ...extra };
 }
 
-async function http(method, path, body) {
+async function http(method, path, body, options = {}) {
   const res = await fetch(`/api${path}`, {
     method,
     headers: {
       ...(method !== "GET" ? { "Content-Type": "application/json" } : {}),
-      ...authHeaders(),
+      ...authHeaders(options.headers || {}),
     },
     ...(method !== "GET" ? { body: JSON.stringify(body ?? {}) } : {}),
   });
@@ -18,10 +18,10 @@ async function http(method, path, body) {
   return res.json();
 }
 
-export const get   = (p)    => http("GET",    p);
-export const post  = (p,b)  => http("POST",   p, b);
-export const patch = (p,b)  => http("PATCH",  p, b);
-export const del   = (p)    => http("DELETE", p);
+export const get   = (p, o)   => http("GET",    p, null, o);
+export const post  = (p, b, o)=> http("POST",   p, b,   o);
+export const patch = (p, b, o)=> http("PATCH",  p, b,   o);
+export const del   = (p, o)   => http("DELETE", p, null, o);
 
 // -------- Products --------
 export const fetchProducts     = ()        => get(`/products`);
@@ -29,14 +29,15 @@ export const fetchProductById  = (id)      => get(`/products/${id}`);
 export const fetchProduct      = (id)      => get(`/products/${id}`);
 
 // -------- Cart --------
-export const fetchCart       = ()                         => get(`/cart`);
-export const addToCart       = (product_id, quantity=1)   => post(`/cart`, { product_id, quantity });
-export const updateCartQty   = (product_id, quantity)     => patch(`/cart`, { product_id, quantity });
-export const removeFromCart  = (product_id)               => del(`/cart/${product_id}`);
-export const clearCart       = ()                         => del(`/cart`);
+export const fetchCart       = (options)                        => get(`/cart`, options);
+export const addToCart       = (product_id, quantity=1, options)=> post(`/cart`, { product_id, quantity }, options);
+// ✅ ปรับให้ updateCartQty ใช้ PATCH ที่ `/cart/{id}` ให้ตรง backend
+export const updateCartQty   = (product_id, quantity, options)  => patch(`/cart/${product_id}`, { quantity }, options);
+export const removeFromCart  = (product_id, options)            => del(`/cart/${product_id}`, options);
+export const clearCart       = (options)                        => del(`/cart`, options);
 
 // -------- Orders / Wallet (เหมือนเดิม) --------
-export const createOrder   = (payload = {}) => post(`/orders`, payload);
+export const createOrder   = (payload = {}, options) => post(`/orders`, payload, options);
 
 export function saveDemoOrder(order) {
   try {
@@ -66,5 +67,5 @@ export async function listOrders() {
 }
 
 export const getOrder    = (id) => get(`/orders/${id}`);
-export const loginApi    = (payload) => post(`/auth/login`, payload);
-export const registerApi = (payload) => post(`/auth/register`, payload);
+export const loginApi    = (payload) => post(`/login`, payload);
+export const registerApi = (payload) => post(`/register`, payload);

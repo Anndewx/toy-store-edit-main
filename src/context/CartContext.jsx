@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   addToCart,
-  clearCart, createOrder,
+  clearCart,
+  createOrder,
   fetchCart,
   removeFromCart,
   updateCartQty,
@@ -14,84 +15,159 @@ export default function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  // ✅ เปลี่ยนจากตรวจ pattern JWT → ตรวจว่า "มี token จริงไหม" ก็พอ
+  function hasToken() {
+    return !!localStorage.getItem("token");
+  }
+
+  function authHeader() {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  function handleUnauthorized() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setItems([]);
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
+  }
+
   async function refresh() {
     setLoading(true);
     try {
-      const data = await fetchCart();
-      setItems(Array.isArray(data) ? data : []);
+      if (hasToken()) {
+        const data = await fetchCart({ headers: authHeader() });
+        setItems(Array.isArray(data) ? data : []);
+      } else {
+        setItems([]);
+      }
     } catch (e) {
       console.error("fetch cart failed:", e);
-      setItems([]);
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+      else setItems([]);
     } finally {
       setLoading(false);
     }
   }
 
-  async function add(product_id, qty = 1) { await addToCart(product_id, qty); await refresh(); }
-  async function updateQty(product_id, qty) { await updateCartQty(product_id, qty); await refresh(); }
-  async function remove(product_id) { await removeFromCart(product_id); await refresh(); }
-  async function clear() { await clearCart(); await refresh(); }
+  async function add(product_id, qty = 1) {
+    if (!hasToken()) {
+      alert("กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า");
+      window.location.href = "/login";
+      return;
+    }
+    try {
+      await addToCart(product_id, qty, { headers: authHeader() });
+      await refresh();
+    } catch (e) {
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+      else throw e;
+    }
+  }
 
-  // ✅ โหมดจริง + โหมดจำลอง (เดโม)
+  async function updateQty(product_id, qty) {
+    if (!hasToken()) return;
+    try {
+      await updateCartQty(product_id, qty, { headers: authHeader() });
+      await refresh();
+    } catch (e) {
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+    }
+  }
+
+  async function remove(product_id) {
+    if (!hasToken()) return;
+    try {
+      await removeFromCart(product_id, { headers: authHeader() });
+      await refresh();
+    } catch (e) {
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+    }
+  }
+
+  async function clear() {
+    if (!hasToken()) return;
+    try {
+      await clearCart({ headers: authHeader() });
+      await refresh();
+    } catch (e) {
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+    }
+  }
+
   async function checkout(payload = {}) {
+    if (!hasToken()) {
+      alert("กรุณาเข้าสู่ระบบก่อนทำรายการสั่งซื้อ");
+      window.location.href = "/login";
+      return;
+    }
+
     const snapshot = {
       at: new Date().toISOString(),
-      items: items.map(i => ({ ...i })),
+      items: items.map((i) => ({ ...i })),
       subtotal: items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0),
     };
 
-    // 1) พยายามยิง API จริงก่อน
     try {
-      const res = await createOrder(payload);
+      const res = await createOrder(payload, { headers: authHeader() });
       if (res?.ok) {
-        localStorage.setItem("lastOrder", JSON.stringify({
-          ...snapshot,
-          order_id: res.order_id,
-          total: res.total,
-          method: payload.method || "unknown",
-          payload, // เก็บข้อมูล (ไว้โชว์ในใบเสร็จ)
-        }));
+        localStorage.setItem(
+          "lastOrder",
+          JSON.stringify({
+            ...snapshot,
+            order_id: res.order_id,
+            total: res.total,
+            method: payload.method || "unknown",
+            payload,
+          })
+        );
         await refresh();
         return res;
       }
     } catch (e) {
-      // ผ่านไปใช้โหมดจำลอง
-      console.warn("createOrder failed, fallback to demo mode:", e);
+      if ((e?.message || "").includes("401")) {
+        handleUnauthorized();
+        return;
+      }
+      if (hasToken()) {
+        console.warn("createOrder failed, fallback to demo:", e);
+        const demoRes = {
+          ok: true,
+          order_id: `SIM-${Date.now().toString().slice(-6)}`,
+          total: snapshot.subtotal,
+        };
+        localStorage.setItem(
+          "lastOrder",
+          JSON.stringify({
+            ...snapshot,
+            order_id: demoRes.order_id,
+            total: demoRes.total,
+            method: payload.method || "demo",
+            payload,
+            demo: true,
+          })
+        );
+        try {
+          await clearCart({ headers: authHeader() });
+        } catch {}
+        await refresh();
+        return demoRes;
+      }
+      throw e;
     }
-
-    // 2) โหมดจำลอง (เดโม) — ไม่ต้องติดต่อเซิร์ฟเวอร์ก็มีใบเสร็จ
-    const demoRes = {
-      ok: true,
-      order_id: `SIM-${Date.now().toString().slice(-6)}`,
-      total: snapshot.subtotal,
-    };
-
-    localStorage.setItem("lastOrder", JSON.stringify({
-      ...snapshot,
-      order_id: demoRes.order_id,
-      total: demoRes.total,
-      method: payload.method || "demo",
-      payload,
-      demo: true,
-    }));
-
-    // เคลียร์ตะกร้าแบบ local ให้ฟีลสะอาดตา
-    try { await clearCart(); } catch {}
-    await refresh();
-
-    return demoRes;
   }
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    if (hasToken()) refresh();
+  }, []);
 
   const subtotal = useMemo(
     () => items.reduce((s, i) => s + Number(i.price) * Number(i.quantity), 0),
     [items]
   );
-  const count = useMemo(
-    () => items.reduce((s, i) => s + Number(i.quantity), 0),
-    [items]
-  );
+  const count = useMemo(() => items.reduce((s, i) => s + Number(i.quantity), 0), [items]);
 
   return (
     <CartCtx.Provider

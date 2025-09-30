@@ -13,7 +13,6 @@ export default function RegisterPage() {
     setBusy(true);
     setError("");
 
-    // 1) พยายามยิง API จริงก่อน (ปรับ URL/payload ให้ตรง backend ของคุณ)
     try {
       const res = await fetch("/api/register", {
         method: "POST",
@@ -21,38 +20,32 @@ export default function RegisterPage() {
         body: JSON.stringify({ username, name, email, password }),
       });
 
-      if (res.ok) {
-        const data = await res.json(); // คาดหวัง { token, user }
-        if (data?.token && data?.user) {
-          localStorage.setItem("token", data.token);
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              name: data.user.name || name || username,
-              username: data.user.username || username,
-              email: data.user.email || email,
-              role: data.user.role || "user",
-              avatar: data.user.avatar || "",
-            })
-          );
-          window.dispatchEvent(new Event("user-changed"));
-          window.location.href = "/";
-          return;
-        }
+      if (!res.ok) {
+        const msg = (await res.text()) || `HTTP ${res.status}`;
+        throw new Error(msg);
       }
-      throw new Error("fallback to demo");
-    } catch {
-      // 2) โหมดเดโม (สมัคร-ล็อกอินทันที)
-      const demoUser = {
-        name: name || username || email?.split("@")[0] || "Member",
-        username: username || "member",
-        email: email || "member@example.com",
-        role: "user",
-      };
-      localStorage.setItem("token", "demo-token");
-      localStorage.setItem("user", JSON.stringify(demoUser));
-      window.dispatchEvent(new Event("user-changed"));
-      window.location.href = "/";
+
+      const data = await res.json();
+      if (data?.token && data?.user) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem(
+          "user",
+          JSON.stringify({
+            name: data.user.name || name || username,
+            username: data.user.username || username,
+            email: data.user.email || email,
+            role: data.user.role || "user",
+            avatar: data.user.avatar || "",
+          })
+        );
+        window.dispatchEvent(new Event("user-changed"));
+        window.location.href = "/";
+        return;
+      }
+
+      throw new Error("ข้อมูลตอบกลับไม่ถูกต้อง");
+    } catch (err) {
+      setError(`สมัครสมาชิกไม่สำเร็จ: ${err.message || ""}`);
     } finally {
       setBusy(false);
     }
@@ -71,6 +64,7 @@ export default function RegisterPage() {
           boxShadow: "0 8px 24px rgba(0,0,0,.05)",
         }}
       >
+        {/* form เดิมทั้งหมดคงไว้ */}
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
           <label>Username</label>
           <input

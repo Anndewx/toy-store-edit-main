@@ -1,3 +1,5 @@
+// server/routes/auth.js
+import 'dotenv/config';
 import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -5,40 +7,90 @@ import { pool } from "../db.js";
 
 const router = express.Router();
 
+// ✅ ใช้ secret เดียวกับ server.js / .env
+const SECRET = process.env.JWT_SECRET || "toy_store_secret";
+
+// ---------- REGISTER ----------
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password } = req.body || {};
-    if (!username || !password) return res.status(400).json({ message: "username / password required" });
+    const { username, name, email, password } = req.body || {};
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "name / email / password required" });
+    }
 
-    const [[dup]] = await pool.query("SELECT id FROM users WHERE username=?", [username]);
-    if (dup) return res.status(409).json({ message: "username already taken" });
+    // ตรวจซ้ำอีเมล
+    const [[dup]] = await pool.query("SELECT user_id FROM users WHERE email=?", [email]);
+    if (dup) return res.status(409).json({ message: "email already taken" });
 
     const hash = await bcrypt.hash(password, 10);
+
+    // บันทึก user ลง DB
     await pool.query(
-      "INSERT INTO users (username, email, password_hash) VALUES (?,?,?)",
-      [username, email || null, hash]
+      "INSERT INTO users (name, email, password, role, created_at) VALUES (?,?,?,?,NOW())",
+      [name, email, hash, "customer"]
     );
-    res.json({ ok: true });
+
+    // ดึง user กลับมา
+    const [[u]] = await pool.query(
+      "SELECT user_id, name, email, role FROM users WHERE email=?",
+      [email]
+    );
+
+    // ✅ sign token ด้วย SECRET เดียวกัน
+    const token = jwt.sign(
+      { id: u.user_id, email: u.email, role: u.role },
+      SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: u.user_id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+      },
+    });
   } catch (e) {
     console.error("REGISTER ERR:", e);
     res.status(500).json({ message: "register failed", detail: e.code || e.message });
   }
 });
 
+// ---------- LOGIN ----------
 router.post("/login", async (req, res) => {
   try {
-    const { username, password } = req.body || {};
-    const [[u]] = await pool.query("SELECT * FROM users WHERE username=?", [username]);
-    if (!u) return res.status(401).json({ message: "invalid username or password" });
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ message: "email / password required" });
+    }
 
-    const ok = await bcrypt.compare(password, u.password_hash);
-    if (!ok) return res.status(401).json({ message: "invalid username or password" });
+    const [[u]] = await pool.query("SELECT * FROM users WHERE email=?", [email]);
+    if (!u) return res.status(401).json({ message: "invalid email or password" });
 
-    const token = jwt.sign({ id: u.id, username: u.username }, process.env.JWT_SECRET || "devsecret", { expiresIn: "7d" });
-    res.json({ token, user: { id: u.id, username: u.username, email: u.email } });
+    const ok = await bcrypt.compare(password, u.password);
+    if (!ok) return res.status(401).json({ message: "invalid email or password" });
+
+    // ✅ ใช้ SECRET เดียวกันกับ register
+    const token = jwt.sign(
+      { id: u.user_id, email: u.email, role: u.role },
+      SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: u.user_id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+      },
+    });
   } catch (e) {
     console.error("LOGIN ERR:", e);
-    res.status(500).json({ message: "login failed" });
+    res.status(500).json({ message: "login failed", detail: e.code || e.message });
   }
 });
 
