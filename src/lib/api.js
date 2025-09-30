@@ -1,5 +1,8 @@
 // src/lib/api.js
 
+// ✅ กำหนด BASE_URL ให้ชี้ไปที่ backend port 3001
+const BASE_URL = import.meta?.env?.VITE_API_BASE || "http://localhost:3001";
+
 // ===== Auth header helper =====
 function authHeaders(extra = {}) {
   const token = localStorage.getItem("token");
@@ -8,13 +11,14 @@ function authHeaders(extra = {}) {
 
 // ===== Low-level HTTP helper =====
 async function http(method, path, body, options = {}) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${BASE_URL}/api${path}`, {
     method,
     headers: {
       ...(method !== "GET" ? { "Content-Type": "application/json" } : {}),
       ...authHeaders(options.headers || {}),
     },
     ...(method !== "GET" ? { body: JSON.stringify(body ?? {}) } : {}),
+    credentials: "include",
   });
 
   // แปลงเป็น JSON ถ้าเป็น 204 จะคืน null
@@ -50,7 +54,7 @@ export const fetchNewProducts  = (limit = 12, options)  => get(`/products/new?li
 export const fetchCart      = (options)                               => get(`/cart`, options);
 export const addToCart      = (product_id, quantity = 1, options)     => post(`/cart`, { product_id, quantity }, options);
 
-// ✅ ประเด็นที่แก้: อัปเดตจำนวนให้ใช้ PATCH และชี้ไปที่ `/cart/{product_id}`
+// ✅ จุดสำคัญ — ใช้ PATCH /cart/:id สำหรับอัปเดตจำนวน
 export const updateCartQty  = (product_id, quantity, options)         => patch(`/cart/${product_id}`, { quantity }, options);
 
 export const removeFromCart = (product_id, options)                   => del(`/cart/${product_id}`, options);
@@ -59,7 +63,6 @@ export const clearCart      = (options)                               => del(`/c
 // =====================================================================
 // Orders
 // =====================================================================
-
 export const createOrder    = (payload = {}, options)                 => post(`/orders`, payload, options);
 export const getOrders      = (options)                                => get(`/orders`, options);
 export const getOrder       = (id, options)                            => get(`/orders/${id}`, options);
@@ -87,13 +90,7 @@ export const loginApi       = (payload, options)                       => post(`
 export const registerApi    = (payload, options)                       => post(`/register`, payload, options);
 
 // =====================================================================
-// Optional helpers (เฉพาะถ้ามีใน backend ของคุณ)
-// =====================================================================
-// export const fetchMe        = (options)                               => get(`/me`, options);
-// export const updateProfile  = (payload, options)                      => patch(`/me`, payload, options);
-
-// =====================================================================
-// Local demo helpers (ถ้าเคยใช้บันทึกออร์เดอร์เดโม่ใน localStorage)
+// Local demo helpers
 // =====================================================================
 export function saveDemoOrder(order) {
   try {
@@ -105,7 +102,6 @@ export function saveDemoOrder(order) {
 }
 
 export async function listOrdersMerged() {
-  // รวมรายการออร์เดอร์จาก API + demo localStorage (ถ้าจำเป็น)
   const remote = await get(`/orders`).catch(() => []);
   let demo = [];
   try {

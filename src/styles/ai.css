@@ -262,3 +262,113 @@
 .ai-toast.show{
   opacity:1; transform: translateX(-50%) translateY(0);
 }
+
+/* ===== AI Section Shell (ไม่ต้องแก้ JSX) ===== */
+.ai-sticky-wrap{
+  /* กล่องครอบทั้งฟังก์ชัน AI */
+  max-width: 1200px;
+  margin: 26px auto;
+  padding: 18px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #0c0f14 0%, #0b0d11 100%); /* ดำเทาเรียบหรู */
+  border: 1px solid rgba(255,215,0,.12);                         /* เส้นทองอ่อนมาก */
+  box-shadow:
+    0 30px 60px rgba(0,0,0,.35),                                 /* เงาหลัก */
+    inset 0 1px 0 rgba(255,255,255,.04),                         /* ไฮไลต์ด้านบนบาง ๆ */
+    0 0 0 1px rgba(255,215,0,.06);                               /* เส้นนอกจาง ๆ */
+  position: relative;
+  overflow: hidden;
+}
+
+/* เส้นเรืองขอบด้านใน */
+.ai-sticky-wrap::before{
+  content:"";
+  position:absolute; inset:0; border-radius:24px;
+  pointer-events:none;
+  box-shadow: inset 0 0 0 1px rgba(255,225,90,.08);
+}
+
+/* จัด layout ภายในให้ลอยสวยบนพื้นหลังใหม่ */
+.ai-rect-bar.compact.centered{
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.18);
+  padding: 10px 12px;
+}
+
+/* กล่อง search */
+.ai-rect-search{
+  background: #0f141b;
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+.ai-rect-search input{
+  color:#fff;
+  background:transparent;
+}
+
+/* ชิปหัวข้อ */
+.ai-topics.slim.centered{
+  margin-top: 14px;
+  display:flex; gap:12px; flex-wrap:wrap;
+}
+.ai-topics .topic{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 12px; border-radius:999px; font-weight:800;
+  background: linear-gradient(180deg, #1a2028, #131820);
+  border:1px solid rgba(255,255,255,.08);
+  color:#e7e7e7;
+  box-shadow: 0 6px 14px rgba(0,0,0,.22);
+}
+.ai-topics .topic.active{
+  background:
+    radial-gradient(120% 120% at 20% 20%, rgba(255,215,0,.22), transparent 45%),
+    linear-gradient(180deg, #1f232b, #151a22);
+  border-color: rgba(255,215,0,.35);
+  color:#ffe585;
+}
+
+/* ปุ่ม AI Suggest ขวาสุด */
+.ai-btn.primary-y{
+  background:
+    radial-gradient(120% 120% at 15% 20%, rgba(255,215,0,.28), transparent 45%),
+    linear-gradient(180deg, #1f2530, #151b24);
+  border:1px solid rgba(255,215,0,.36);
+  color:#ffe793;
+  border-radius:12px;
+  box-shadow: 0 8px 22px rgba(255,215,0,.12);
+}
+
+/* การ์ดผลลัพธ์ 2 ใบ */
+.ai-mini-results{ margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width: 992px){ .ai-mini-results{ grid-template-columns:1fr; } }
+
+.ai-mini-card{
+  background:#0f141b;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:16px;
+  padding:14px;
+  box-shadow: 0 16px 38px rgba(0,0,0,.30);
+}
+.ai-mini-badge{
+  display:inline-block; margin-top:6px;
+  padding:6px 10px; border-radius:10px; font-weight:800; font-size:.85rem;
+  background: rgba(255,215,0,.12); color:#ffe793; border:1px solid rgba(255,215,0,.28);
+}
+.ai-mini-actions .add-btn{
+  margin-top:8px;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 14px; border-radius:12px; font-weight:800;
+  background: linear-gradient(180deg, #1f2530, #151b24);
+  border:1px solid rgba(255,255,255,.10);
+  color:#eaeaea;
+}
+
+/* สเกเลตัน */
+.ai-mini-card.skeleton{
+  background: linear-gradient(90deg, #1a1f27 25%, #0f141b 50%, #1a1f27 75%);
+  background-size: 200% 100%; animation: aiLoading 1.5s infinite;
+}
+@keyframes aiLoading{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }

@@ -15,7 +15,6 @@ export default function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ เปลี่ยนจากตรวจ pattern JWT → ตรวจว่า "มี token จริงไหม" ก็พอ
   function hasToken() {
     return !!localStorage.getItem("token");
   }
@@ -75,6 +74,14 @@ export default function CartProvider({ children }) {
     } catch (e) {
       if ((e?.message || "").includes("401")) handleUnauthorized();
     }
+  }
+
+  // ✅ เพิ่มฟังก์ชันนี้สำหรับปุ่ม – / +
+  function changeQty(product_id, delta) {
+    const item = items.find(i => Number(i.product_id) === Number(product_id));
+    if (!item) return;
+    const newQty = Math.max(1, Number(item.quantity) + Number(delta || 0));
+    updateQty(product_id, newQty);
   }
 
   async function remove(product_id) {
@@ -171,7 +178,19 @@ export default function CartProvider({ children }) {
 
   return (
     <CartCtx.Provider
-      value={{ items, loading, subtotal, count, add, updateQty, remove, clear, checkout, refresh }}
+      value={{
+        items,
+        loading,
+        subtotal,
+        count,
+        add,
+        updateQty,
+        changeQty, // ✅ เพิ่มเข้า context
+        remove,
+        clear,
+        checkout,
+        refresh
+      }}
     >
       {children}
     </CartCtx.Provider>
