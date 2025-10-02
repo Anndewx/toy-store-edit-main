@@ -239,3 +239,130 @@
     grid-template-columns: 1fr;
   }
 }
+
+.p-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.btn-buy-now {
+  flex: 1;
+  background-color: #f7c600; /* เหลืองธีม */
+  color: #000;
+  border: none;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-buy-now:hover:not(:disabled) {
+  background-color: #eab400;
+}
+
+.btn-buy-now:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ====== Actions layout ====== */
+.p-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+/* ให้ปุ่มในแผงนี้ยืดเท่ากัน */
+.p-actions .btn-primary,
+.p-actions .btn-buy-now {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  border: none;
+  cursor: pointer;
+  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease, background-color .2s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+
+/* Hover / Active */
+.p-actions .btn-primary:hover:not(:disabled),
+.p-actions .btn-buy-now:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.p-actions .btn-primary:active:not(:disabled),
+.p-actions .btn-buy-now:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ====== Buy Now theme (เหลือง-ดำ) ====== */
+.btn-buy-now {
+  background: #f7c600;      /* เหลืองหลัก */
+  color: #111;
+}
+.btn-buy-now:hover:not(:disabled) { background: #eab400; }
+.btn-buy-now:focus-visible { outline: 2px solid #eab400; outline-offset: 2px; }
+
+/* ====== Disabled State (กันธีมเก่าทับ) ====== */
+.p-actions .btn-primary:disabled,
+.p-actions .btn-buy-now:disabled,
+.p-actions .btn-primary.is-disabled,
+.p-actions .btn-buy-now.is-disabled {
+  opacity: .55;
+  filter: grayscale(25%);
+  cursor: not-allowed;
+  pointer-events: none;   /* << สำคัญ: กดไม่ได้จริง */
+  box-shadow: none;
+  transform: none;
+}
+
+/* ปุ่มจัดวางคู่ */
+.p-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.p-actions .btn-primary,
+.p-actions .btn-buy-now {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  border: none;
+  cursor: pointer;
+  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease, background-color .2s ease;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+
+.p-actions .btn-primary:hover:not(:disabled),
+.p-actions .btn-buy-now:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.p-actions .btn-primary:active:not(:disabled),
+.p-actions .btn-buy-now:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ซื้อเลย: ธีมเหลือง–ดำ */
+.btn-buy-now { background: #f7c600; color: #111; }
+.btn-buy-now:hover:not(:disabled) { background: #eab400; }
+.btn-buy-now:focus-visible { outline: 2px solid #eab400; outline-offset: 2px; }
+
+/* Disabled ให้จางและกดไม่ได้แน่นอน */
+.p-actions .btn-primary:disabled,
+.p-actions .btn-buy-now:disabled,
+.p-actions .btn-primary.is-disabled,
+.p-actions .btn-buy-now.is-disabled {
+  opacity: .55;
+  filter: grayscale(25%);
+  cursor: not-allowed;
+  pointer-events: none; /* หยุดคลิก 100% */
+  box-shadow: none;
+  transform: none;
+}

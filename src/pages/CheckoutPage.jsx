@@ -169,7 +169,7 @@ export default function CheckoutPage() {
                 className={`pay-card ${paymentMethod === "other" ? "active" : ""}`}
                 onClick={() => setPaymentMethod("other")}
               >
-                💳 PromptPay / QR
+                💳 PromptPay
               </div>
             </div>
 

@@ -66,6 +66,23 @@ export default function CartProvider({ children }) {
     }
   }
 
+  // ✅ ฟังก์ชันซื้อเลย: ล้างตะกร้า -> เพิ่มสินค้าใหม่ -> refresh
+  async function buyNow(product_id, qty = 1) {
+    if (!hasToken()) {
+      alert("กรุณาเข้าสู่ระบบก่อนทำรายการ");
+      window.location.href = "/login";
+      return;
+    }
+    try {
+      await clearCart({ headers: authHeader() });
+      await addToCart(product_id, qty, { headers: authHeader() });
+      await refresh();
+    } catch (e) {
+      if ((e?.message || "").includes("401")) handleUnauthorized();
+      else throw e;
+    }
+  }
+
   async function updateQty(product_id, qty) {
     if (!hasToken()) return;
     try {
@@ -76,7 +93,6 @@ export default function CartProvider({ children }) {
     }
   }
 
-  // ✅ เพิ่มฟังก์ชันนี้สำหรับปุ่ม – / +
   function changeQty(product_id, delta) {
     const item = items.find(i => Number(i.product_id) === Number(product_id));
     if (!item) return;
@@ -184,8 +200,9 @@ export default function CartProvider({ children }) {
         subtotal,
         count,
         add,
+        buyNow, // ✅ เพิ่มตรงนี้
         updateQty,
-        changeQty, // ✅ เพิ่มเข้า context
+        changeQty,
         remove,
         clear,
         checkout,

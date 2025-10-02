@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import "./ProductCard.css";
 
@@ -7,25 +7,17 @@ function resolveImageSrc(product) {
   const raw0 = product?.image_url ?? product?.image ?? "";
   const raw = String(raw0).trim();
 
-  // รูปว่าง -> ใช้ placeholder (อย่าลืมมีไฟล์นี้ใน backend: public/images/placeholder.jpg)
   if (!raw) return "/images/placeholder.jpg";
-
-  // ถ้าเป็น URL เต็ม (http/https) ก็ให้ใช้ได้เลย
   if (/^https?:\/\//i.test(raw)) return raw;
-
-  // ถ้าให้มาเป็น "/images/xxx.jpg" (หรือ "images/xxx.jpg") -> บังคับให้เป็น path relative เพื่อให้ proxy ทำงาน
   if (raw.startsWith("/images/")) return raw;
   if (raw.startsWith("images/")) return "/" + raw;
-
-  // ถ้าเป็นแค่ชื่อไฟล์ "gundam.jpg" -> ต่อ prefix /images/
   if (/^[^/\\]+\.[a-z0-9]{2,5}$/i.test(raw)) return `/images/${raw}`;
-
-  // กรณีอื่น ๆ ให้บังคับเป็น relative เช่น "/<raw>"
   return raw.startsWith("/") ? raw : `/${raw}`;
 }
 
 export default function ProductCard({ product, loading }) {
-  const { add } = useCart();
+  const { add, buyNow } = useCart();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -46,32 +38,47 @@ export default function ProductCard({ product, loading }) {
     name,
     price,
     original_price,
-    stock = 0,
     on_sale,
   } = product;
+
+  // ✅ รองรับหลายฟิลด์ และแปลงเป็นตัวเลขเสมอ
+  const stockRaw =
+    product?.stock ?? product?.quantity ?? product?.inventory_qty ?? 0;
+  const stockNum = Number(stockRaw);
+  const isOOS = !(stockNum > 0); // true เมื่อ 0, "0", null, undefined, หรือติดลบ
 
   const hasDiscount =
     on_sale === 1 || (original_price && Number(original_price) > Number(price));
   const discountPercent =
     hasDiscount && original_price
-      ? Math.round(((original_price - price) / original_price) * 100)
+      ? Math.round(((Number(original_price) - Number(price)) / Number(original_price)) * 100)
       : 0;
 
-  const stockStatus = stock > 10 ? "in-stock" : stock > 0 ? "low-stock" : "out-of-stock";
+  const stockStatus = stockNum > 10 ? "in-stock" : stockNum > 0 ? "low-stock" : "out-of-stock";
   const stockText =
-    stock > 10 ? `มีสินค้า ${stock} ชิ้น` : stock > 0 ? `เหลือเพียง ${stock} ชิ้น!` : "สินค้าหมด";
+    stockNum > 10 ? `มีสินค้า ${stockNum} ชิ้น` : stockNum > 0 ? `เหลือเพียง ${stockNum} ชิ้น!` : "สินค้าหมด";
 
   const imgSrc = resolveImageSrc(product);
 
-  // ✅ เพิ่มเฉพาะ: เช็ก token ก่อนเพิ่มตะกร้า
-  function handleAddToCart() {
+  function requireLogin() {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert("กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า");
+      alert("กรุณาเข้าสู่ระบบก่อนทำรายการ");
       window.location.href = "/login";
-      return;
+      return false;
     }
+    return true;
+  }
+
+  function handleAddToCart() {
+    if (!requireLogin() || isOOS) return;
     add(product_id, 1);
+  }
+
+  function handleBuyNow() {
+    if (!requireLogin() || isOOS) return;
+    // ล้างตะกร้า → ใส่สินค้าชิ้นนี้ → ไปหน้า checkout (ทำใน CartContext.buyNow + navigate)
+    buyNow(product_id, 1).then(() => navigate("/checkout"));
   }
 
   return (
@@ -88,7 +95,7 @@ export default function ProductCard({ product, loading }) {
         />
         <div className="p-badges">
           {hasDiscount && <span className="badge badge-sale">-{discountPercent}%</span>}
-          {stock <= 5 && stock > 0 && <span className="badge badge-hot">เหลือน้อย</span>}
+          {stockNum <= 5 && stockNum > 0 && <span className="badge badge-hot">เหลือน้อย</span>}
         </div>
       </Link>
 
@@ -109,10 +116,29 @@ export default function ProductCard({ product, loading }) {
           )}
         </div>
 
-        {/* ✅ เปลี่ยน onClick ให้เรียก handler ที่เช็ก token ก่อน */}
-        <button className="btn-primary" onClick={handleAddToCart} disabled={stock === 0}>
-          {stock === 0 ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
-        </button>
+        {/* ปุ่มคู่ */}
+        <div className="p-actions">
+          <button
+            type="button"
+            className={`btn-primary ${isOOS ? "is-disabled" : ""}`}
+            onClick={handleAddToCart}
+            disabled={isOOS}
+            aria-disabled={isOOS}
+          >
+            {isOOS ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
+          </button>
+
+          <button
+            type="button"
+            className={`btn-buy-now ${isOOS ? "is-disabled" : ""}`}
+            onClick={handleBuyNow}
+            disabled={isOOS}
+            aria-disabled={isOOS}
+            title={isOOS ? "สินค้าหมด" : "ซื้อเลย"}
+          >
+            ซื้อเลย
+          </button>
+        </div>
       </div>
     </div>
   );
