@@ -3,7 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import "../styles/ai.css";
 import { useCart } from "../context/CartContext";
 
-const fixImg = (u) => (!u ? "" : u.startsWith("http") ? u : (u.startsWith("/") ? u : `/${u}`));
+// ============= helpers (คงสไตล์เดิม) =============
+const fixImg = (u) =>
+  !u ? "" : u.startsWith("http") ? u : (u.startsWith("/") ? u : `/${u}`);
 
 const parsePrompt = (input) => {
   const s = (input || "").toLowerCase();
@@ -21,6 +23,17 @@ const TOPICS = [
   { key: "sale",     label: "ราคาพิเศษ",  icon: "💸", params: { onSale: 1 } },
   { key: "new",      label: "มาใหม่",      icon: "🆕", params: { newest: 1 } },
 ];
+
+// Fisher–Yates shuffle เพื่อสุ่มผลลัพธ์ก่อนเลือก 2 ชิ้น
+const shuffle = (arr) => {
+  if (!Array.isArray(arr)) return [];
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 export default function AISearchSection() {
   const [prompt, setPrompt] = useState("");
@@ -41,16 +54,30 @@ export default function AISearchSection() {
     try {
       const qs = new URLSearchParams({ limit: 8, ...params }).toString();
       let data = [];
+
+      // 1) เรียก /search ก่อน (คงพฤติกรรมเดิม แต่เพิ่มเช็ค r.ok)
       try {
         const r1 = await fetch(`/api/products/search?${qs}`);
-        data = await r1.json();
+        if (r1.ok) {
+          data = await r1.json();
+        } else {
+          console.error("Search failed:", r1.status);
+        }
       } catch (_) {}
+
+      // 2) ถ้าไม่ได้ → fallback ไป /new และกัน cache
       if (!Array.isArray(data) || data.length === 0) {
         try {
-          const r2 = await fetch(`/api/products/new?limit=8`);
-          data = await r2.json();
+          const r2 = await fetch(`/api/products/new?limit=8&_=${Date.now()}`);
+          if (r2.ok) {
+            data = await r2.json();
+          } else {
+            console.error("Fallback /new failed:", r2.status);
+          }
         } catch (_) {}
       }
+
+      // 3) map → filter เหมือนเดิม แล้ว "สุ่ม" ก่อนเลือก 2 ชิ้น
       const mapped = (Array.isArray(data) ? data : [])
         .map((p) => ({
           id: p.product_id ?? p.id,
@@ -62,7 +89,7 @@ export default function AISearchSection() {
         }))
         .filter((x) => x.id && x.img);
 
-      setItems(pickTop(mapped, 2));
+      setItems(pickTop(shuffle(mapped), 2));
     } finally {
       setLoading(false);
     }
@@ -82,6 +109,7 @@ export default function AISearchSection() {
   };
 
   useEffect(() => {
+    // สิงห์เดิม: ฟัง custom event เพื่อ trigger ค้นหาแบบด่วน
     const handler = (e) => {
       const detail = e?.detail || {};
       fetchReal(detail);
@@ -106,6 +134,7 @@ export default function AISearchSection() {
     }
   };
 
+  // ============= JSX เดิมพร้อมคลาสเดิม (ai.css) =============
   return (
     <section className="ai-section">
       <div className="ai-shell">

@@ -63,4 +63,33 @@ router.get("/new", async (req, res) => {
   }
 });
 
+// GET /api/products/search?q=keyword
+router.get("/search", async (req, res) => {
+  if (!ensurePool(res)) return;
+  try {
+    const q = (req.query.q || "").trim();
+    const limit = Math.max(1, Math.min(Number(req.query.limit) || 12, 100));
+
+    // Base query
+    let sql = `${SELECT_COMMON}`;
+    const params = [];
+
+    if (q) {
+      sql += ` WHERE p.name LIKE ? OR p.category_slug LIKE ? `;
+      params.push(`%${q}%`, `%${q}%`);
+    }
+
+    // Sort: สินค้าที่มาใหม่สุดก่อน
+    sql += ` ORDER BY p.product_id DESC LIMIT ?`;
+    params.push(limit);
+
+    const [rows] = await pool.query(sql, params);
+    res.json(rows);
+  } catch (e) {
+    console.error("GET /products/search error:", e);
+    res.status(500).json({ message: "internal error" });
+  }
+});
+
+
 export default router;
