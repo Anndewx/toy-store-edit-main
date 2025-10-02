@@ -20,6 +20,9 @@ import AddressPage from "./pages/AddressPage";
 // 🧠 เพิ่มคอมโพเนนต์ AI แนะนำสินค้า
 import AIFloatingRecommender from "./components/AIFloatingRecommender";
 
+// ✅ นำเข้าเพจนโยบายการจัดส่ง
+import ShippingPolicy from "./pages/ShippingPolicy";
+
 export default function App() {
   return (
     <>
@@ -51,6 +54,9 @@ export default function App() {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/dashboard" element={<AnalyticsDashboard />} />
         <Route path="/address" element={<AddressPage />} />
+
+        {/* ✅ เส้นทางนโยบายการจัดส่ง */}
+        <Route path="/policies/shipping" element={<ShippingPolicy />} />
       </Routes>
 
       {/* Drawer สำหรับ Cart */}
