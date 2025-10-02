@@ -1,0 +1,17 @@
+/* index.css หรือ AddressModal.css */
+.addr-modal {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,.4);
+  display:flex; align-items:center; justify-content:center;
+  z-index:999;
+}
+.addr-box {
+  background:#fff; padding:20px; border-radius:12px;
+  max-width:480px; width:100%; position:relative;
+}
+.addr-list { margin-bottom: 1rem; }
+.addr-item { padding:8px; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:8px; }
+.addr-item.default { border-color: #22c55e; background: #f0fdf4; }
+.addr-actions button { margin-left:8px; font-size:12px; }
+.addr-form input { display:block; width:100%; margin-bottom:8px; padding:6px; border:1px solid #e2e8f0; border-radius:6px; }
+.close-btn { position:absolute; top:8px; right:8px; background:none; border:none; font-size:16px; cursor:pointer; }

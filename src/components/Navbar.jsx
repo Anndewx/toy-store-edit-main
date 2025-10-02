@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import "./Navbar.css";
 import { useCart } from "../context/CartContext";
-import UserMenu from "./UserMenu"; // 👈 เมนูโปรไฟล์ใหม่
+import UserMenu from "./UserMenu"; // 👈 เมนูโปรไฟล์
+import AddressBadge from "./AddressBadge"; // ✅ [เพิ่ม] ปุ่มที่อยู่
 
 export default function Navbar() {
   const { count } = useCart();
@@ -55,6 +56,8 @@ export default function Navbar() {
 
           {/* เมนูโปรไฟล์ */}
           <UserMenu />
+          {/* ✅ [เพิ่ม] ปุ่มแสดง/จัดการที่อยู่ (อยู่ข้างโปรไฟล์) */}
+          <AddressBadge />
         </div>
       </div>
     </header>

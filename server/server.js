@@ -10,7 +10,7 @@ import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
+import addressesRoutes from "./routes/addresses.js";
 import { pool } from './db.js';
 import cartRoutes from './routes/cart.js';
 import ordersRoutes from './routes/orders.js';
@@ -367,6 +367,7 @@ function requireAuth(req, res, next) {
 // ใหม่: ต้องมี token เท่านั้น (คงตามไฟล์เดิม)
 app.use('/api/cart', requireAuth, cartRoutes);
 app.use('/api/orders', requireAuth, ordersRoutes);
+app.use("/api/addresses", addressesRoutes);
 
 // Mount Auth routes
 app.use("/api", authRoutes);

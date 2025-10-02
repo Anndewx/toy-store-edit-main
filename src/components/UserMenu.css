@@ -16,3 +16,9 @@
 .um__email { font-size: 12px; color: #6b7280; }
 .um__logout { width: 100%; height: 36px; border: 0; border-radius: 10px; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; }
 .um__logout:hover { filter: brightness(.95); }
+
+/* แทรกเพิ่มท้ายไฟล์ src/components/UserMenu.css */
+.um__addr{
+  font-size: 12px; color:#475569;
+  margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}

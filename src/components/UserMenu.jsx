@@ -1,5 +1,7 @@
+// src/components/UserMenu.jsx
 import { useEffect, useRef, useState } from "react";
 import "./UserMenu.css";
+import { get } from "../lib/api"; // ✅ เพิ่ม: ใช้เรียก /api/addresses
 
 function getUser() {
   try {
@@ -15,19 +17,35 @@ export default function UserMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  // ฟัง event เมื่อ user login/logout
+  // ✅ ที่อยู่หลัก (แสดงใต้ email)
+  const [defaultAddr, setDefaultAddr] = useState(null);
+
   useEffect(() => {
     const update = () => setUser(getUser());
     window.addEventListener("user-changed", update);
     return () => window.removeEventListener("user-changed", update);
   }, []);
 
-  // ปิด dropdown เมื่อคลิกนอก
   useEffect(() => {
     const onClick = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
     window.addEventListener("click", onClick);
     return () => window.removeEventListener("click", onClick);
   }, []);
+
+  // ✅ โหลดที่อยู่หลักมาแสดงใต้ email (ไม่กระทบส่วนอื่น)
+  useEffect(() => {
+    if (!user) return;
+    get("/addresses")
+      .then((rows) => {
+        if (Array.isArray(rows) && rows.length) {
+          const def = rows.find((a) => a.is_default) || rows[0];
+          setDefaultAddr(def);
+        } else {
+          setDefaultAddr(null);
+        }
+      })
+      .catch(() => setDefaultAddr(null));
+  }, [user]);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -42,6 +60,9 @@ export default function UserMenu() {
   }
 
   const short = user.name?.[0]?.toUpperCase?.() || "😺";
+  const addrShort = defaultAddr
+    ? `${defaultAddr.line1} ${defaultAddr.subdistrict} ${defaultAddr.postcode}`.trim()
+    : null;
 
   return (
     <div className="um" ref={ref}>
@@ -55,6 +76,8 @@ export default function UserMenu() {
             <div>
               <div className="um__name">{user.name}</div>
               <div className="um__email">{user.email}</div>
+              {/* ✅ แสดงที่อยู่หลักใต้ email (ตัดข้อความยาวอัตโนมัติด้วย CSS เดิม) */}
+              {addrShort && <div className="um__addr">📍 {addrShort}</div>}
             </div>
           </div>
           <button className="um__logout" onClick={logout}>Logout</button>

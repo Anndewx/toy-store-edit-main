@@ -15,6 +15,7 @@ import ReceiptPage from "./pages/ReceiptPage";
 import RegisterPage from "./pages/RegisterPage";
 import SearchPage from "./pages/SearchPage";
 import WalletPage from "./pages/WalletPage";
+import AddressPage from "./pages/AddressPage";
 
 // 🧠 เพิ่มคอมโพเนนต์ AI แนะนำสินค้า
 import AIFloatingRecommender from "./components/AIFloatingRecommender";
@@ -49,6 +50,7 @@ export default function App() {
         {/* Misc */}
         <Route path="/about" element={<AboutPage />} />
         <Route path="/dashboard" element={<AnalyticsDashboard />} />
+        <Route path="/address" element={<AddressPage />} />
       </Routes>
 
       {/* Drawer สำหรับ Cart */}
