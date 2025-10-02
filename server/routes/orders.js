@@ -96,10 +96,10 @@ router.post("/", async (req, res) => {
       0
     );
 
-    // บันทึก orders
+    // บันทึก orders (เปลี่ยนจาก 'completed' → 'placed' สำหรับ tracking เริ่มต้น)
     const [orderResult] = await conn.query(
       `INSERT INTO orders (user_id, total_price, status)
-       VALUES (?, ?, 'completed')`,
+       VALUES (?, ?, 'placed')`,
       [user_id, total]
     );
     const orderId = orderResult.insertId;
@@ -129,6 +129,27 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to create order" });
   } finally {
     conn.release();
+  }
+});
+
+/** PATCH /api/orders/:id/status – อัปเดตสถานะออเดอร์ */
+router.patch("/:id/status", async (req, res) => {
+  try {
+    const orderId = Number(req.params.id);
+    const { status } = req.body;
+    const validStatuses = ["placed", "processing", "shipping", "delivered"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    await pool.query(`UPDATE orders SET status = ? WHERE order_id = ?`, [
+      status,
+      orderId,
+    ]);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("PATCH /orders/:id/status error:", e);
+    res.status(500).json({ error: "Failed to update status" });
   }
 });
 

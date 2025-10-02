@@ -1,0 +1,128 @@
+/* =========== Premium look =========== */
+.ot { margin: 0 0 16px; }
+.ot__card{
+  max-width: 960px; margin: 0 auto;
+  background: linear-gradient(180deg,#ffffff,#fafafa);
+  border: 1px solid #e5e7eb; border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(0,0,0,.06); padding: 16px 14px 12px;
+}
+
+.ot__track{
+  position: relative;
+  display: grid; grid-template-columns: repeat(4,1fr);
+  align-items: start; gap: 10px; padding: 8px 6px 0;
+}
+
+/* พื้นหลังมีลายกริดจาง ๆ ให้ดูพรีเมียม */
+.ot__rail{
+  position:absolute; top: 28px; left: 6px; right: 6px; height: 8px;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.03) 1px, transparent 1px) 0 0/16px 100%,
+    #eef2f7;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.05);
+}
+
+/* แถบความคืบหน้า: gradient + glow + shine เคลื่อนที่ */
+.ot__progress{
+  position:absolute; top: 28px; left: 6px; height: 8px;
+  background: linear-gradient(90deg,#22c55e,#16a34a);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(34,197,94,.55), inset 0 0 4px rgba(255,255,255,.5);
+  transition: width .6s cubic-bezier(.22,1,.36,1);
+  overflow: hidden;
+}
+.ot__shine{
+  position:absolute; inset:0; width:120%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  transform: translateX(-100%);
+  animation: otShine 2.2s linear infinite;
+}
+@keyframes otShine { to { transform: translateX(0%); } }
+
+/* รถ */
+.ot__truck{ position:absolute; top: -2px; transition:left .6s cubic-bezier(.22,1,.36,1); }
+
+/* Step */
+.ot__step{ text-align:center; z-index:1; }
+.ot__dot{
+  width: 34px; height: 34px; border-radius: 50%;
+  margin: 0 auto 6px;
+  border: 1px solid #d1d5db; color:#6b7280; background:#fff;
+  font-weight:700; display:grid; place-items:center;
+  box-shadow: 0 1px 0 rgba(255,255,255,.9) inset;
+  transition: all .25s ease;
+}
+.ot__dot.is-on{
+  color:#fff; border-color: #16a34a;
+  background: linear-gradient(180deg,#22c55e,#16a34a);
+  box-shadow:
+    0 6px 12px rgba(13,148,136,.15),
+    0 0 0 1px rgba(16,185,129,.25) inset;
+}
+.ot__dot.is-current{
+  position:relative;
+}
+.ot__dot.is-current::after{
+  content:""; position:absolute; inset:-6px;
+  border-radius: 50%; border:2px solid rgba(34,197,94,.6);
+  animation: otPulse 1.6s ease-out infinite;
+}
+@keyframes otPulse{
+  0% { transform: scale(.9); opacity:.85;}
+  100%{ transform: scale(1.2); opacity:0;}
+}
+
+.ot__label{ font-size:12px; color:#6b7280; transition:color .2s ease; }
+.ot__label.is-on{ color:#0f172a; }
+
+/* ETA badge */
+.ot__eta{
+  margin: 10px auto 2px; text-align:center;
+  font-size: 13px; color:#334155;
+  background: linear-gradient(180deg,#fff,#f8fafc);
+  display:inline-block; padding:6px 10px; border-radius: 10px;
+  border:1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,.04);
+}
+
+/* Responsive */
+@media (max-width: 520px){
+  .ot__card{ padding: 14px 10px 10px; }
+  .ot__dot{ width:30px; height:30px; font-size:12px; }
+  .ot__label{ font-size:11px; }
+  .ot__rail,.ot__progress{ top: 26px; }
+  .ot__truck{ top: -4px; }
+}
+
+/* ===== Tooltip for each step ===== */
+.ot__step { position: relative; }
+.ot__tip{
+  position: absolute;
+  left: 50%; transform: translateX(-50%) translateY(6px);
+  min-width: 160px; max-width: 220px;
+  background: #0b1220; color: #e5e7eb;
+  padding: 8px 10px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.06);
+  box-shadow: 0 10px 20px rgba(2,6,23,.25);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+  z-index: 5;
+}
+.ot__tip::after{
+  content:""; position: absolute; top: -6px; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent; border-bottom-color: #0b1220;
+}
+.ot__tip-title{ font-size: 12px; color:#cbd5e1; margin-bottom: 2px; }
+.ot__tip-time{ font-size: 12px; color:#e2e8f0; }
+.ot__step:hover .ot__tip,
+.ot__step:focus-within .ot__tip{
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+
+/* ปลอดภัยกับจอเล็ก */
+@media (max-width: 520px){
+  .ot__tip{ transform: translateX(-50%) translateY(4px); }
+  .ot__step:hover .ot__tip,
+  .ot__step:focus-within .ot__tip{ transform: translateX(-50%) translateY(-2px); }
+}

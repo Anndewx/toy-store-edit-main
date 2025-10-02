@@ -119,7 +119,7 @@ export default function AISearchSection() {
                 <input
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="ค้นหาอัจฉริยะ: พิมพ์เช่น กันดั้ม ลด 500"
+                  placeholder="ค้นหาอัจฉริยะ: gundam"
                   aria-label="AI Search"
                 />
               </form>

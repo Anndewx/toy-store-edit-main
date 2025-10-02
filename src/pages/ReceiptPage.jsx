@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import "./ReceiptPage.css";
 
+// ✅ เพิ่ม: ดึง helper ที่แนบ Authorization ให้อัตโนมัติ
+import { get } from "../lib/api";
+// ✅ เพิ่ม: คอมโพเนนต์แถบติดตามสถานะ
+import OrderTracking from "../components/OrderTracking";
+
 function mask(s = "", left = 4, right = 2) {
   const str = String(s).replace(/\s/g, "");
   if (str.length <= left + right) return "****";
@@ -18,34 +23,42 @@ export default function ReceiptPage() {
       // ถ้ามี order param → ดึงจาก API
       if (orderId) {
         try {
-          const res = await fetch(`/api/orders/${encodeURIComponent(orderId)}`);
-          if (res.ok) {
-            const json = await res.json(); // { order, items }
-            const order = json.order || {};
-            const items = (json.items || []).map((i) => ({
-              name: i.name,
-              quantity: i.quantity,
-              price: i.price,
-            }));
-            setData({
-              order_id: order.order_id,
-              at: order.created_at,
-              method: "unknown", // ฝั่ง server ยังไม่เก็บ method → แสดง unknown
-              payload: {},
-              items,
-              total: Number(order.total_price || 0),
-              demo: false,
-            });
-            return;
-          }
-        } catch {}
+          // ⛔️ เดิม: fetch(`/api/orders/${orderId}`) → 401 เพราะไม่มี Bearer
+          // ✅ ใหม่: ใช้ get() จาก lib/api (แนบ Authorization อัตโนมัติ)
+          const json = await get(`/orders/${encodeURIComponent(orderId)}`); // { order, items }
+
+          const order = json.order || {};
+          const items = (json.items || []).map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            price: i.price,
+          }));
+
+          setData({
+            order_id: order.order_id,
+            at: order.created_at,
+            method: "unknown", // ฝั่ง server ยังไม่เก็บ method → แสดง unknown
+            payload: {},
+            items,
+            total: Number(order.total_price || 0),
+            demo: false,
+            // ✅ เก็บสถานะสำหรับแถบติดตาม
+            status: order.status || "placed",
+          });
+          return;
+        } catch {
+          // ถ้าเรียก API ไม่สำเร็จ จะไปใช้ข้อมูลสำรองด้านล่าง
+        }
       }
 
       // ไม่ได้ดึงจาก API → ใช้ข้อมูลสำรองจาก localStorage
       const raw = localStorage.getItem("lastOrder");
       if (raw) {
         try {
-          setData(JSON.parse(raw));
+          const parsed = JSON.parse(raw);
+          // เผื่อไม่มี status ในข้อมูลสำรอง
+          if (!parsed.status) parsed.status = "placed";
+          setData(parsed);
           return;
         } catch {}
       }
@@ -70,6 +83,11 @@ export default function ReceiptPage() {
 
   return (
     <div className="rcp">
+      {/* ✅ แสดงแถบติดตามสถานะ (รถวิ่ง) ด้านบนกล่องใบเสร็จ */}
+      <div style={{ maxWidth: 960, margin: "0 auto 16px" }}>
+        <OrderTracking status={data.status || "placed"} />
+      </div>
+
       <div className="rcp__box">
         <h2>ใบเสร็จรับเงิน</h2>
         {data.demo && <div className="rcp__tag">DEMO</div>}

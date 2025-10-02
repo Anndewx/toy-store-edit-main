@@ -1,136 +1,137 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import "./ReceiptPage.css";
 
-export default function RegisterPage() {
-  const [username, setUsername] = useState("");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+// ✅ ใช้ helper ที่แนบ Authorization ให้อัตโนมัติ
+import { get } from "../lib/api";
+// ✅ คอมโพเนนต์แถบติดตามสถานะ
+import OrderTracking from "../components/OrderTracking";
 
-  async function handleRegister(e) {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
+function mask(s = "", left = 4, right = 2) {
+  const str = String(s).replace(/\s/g, "");
+  if (str.length <= left + right) return "****";
+  return str.slice(0, left) + "****".repeat(3) + str.slice(-right);
+}
 
-    try {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, name, email, password }),
-      });
+export default function ReceiptPage() {
+  const { search } = useLocation();
+  const orderId = new URLSearchParams(search).get("order");
+  const [data, setData] = useState(null);
 
-      if (!res.ok) {
-        const msg = (await res.text()) || `HTTP ${res.status}`;
-        throw new Error(msg);
+  useEffect(() => {
+    (async () => {
+      // ถ้ามี order param → ดึงจาก API
+      if (orderId) {
+        try {
+          // ⛔️ ห้าม fetch ตรง /api/... เพราะจะไม่แนบ Bearer
+          // ✅ ใช้ get() จาก lib/api (แนบ Authorization อัตโนมัติ)
+          const json = await get(`/orders/${encodeURIComponent(orderId)}`); // { order, items }
+
+          const order = json.order || {};
+          const items = (json.items || []).map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            price: i.price,
+          }));
+
+          // เตรียม history (ถ้ามีฟิลด์เวลาใน response จะถูกส่งเข้า OrderTracking)
+          const history = {
+            placed: order.placed_at || null,
+            processing: order.processing_at || null,
+            shipping: order.shipping_at || null,
+            delivered: order.delivered_at || null,
+          };
+
+          setData({
+            order_id: order.order_id,
+            at: order.created_at,
+            method: "unknown", // ฝั่ง server ยังไม่เก็บ method → แสดง unknown
+            payload: {},
+            items,
+            total: Number(order.total_price || 0),
+            demo: false,
+            status: order.status || "placed",
+            eta_text: order.eta_text || null,
+            history, // 👉 ส่งต่อให้ OrderTracking
+          });
+          return;
+        } catch {
+          // ถ้าเรียก API ไม่สำเร็จ จะไปใช้ข้อมูลสำรองด้านล่าง
+        }
       }
 
-      const data = await res.json();
-      if (data?.token && data?.user) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            name: data.user.name || name || username,
-            username: data.user.username || username,
-            email: data.user.email || email,
-            role: data.user.role || "user",
-            avatar: data.user.avatar || "",
-          })
-        );
-        window.dispatchEvent(new Event("user-changed"));
-        window.location.href = "/";
-        return;
+      // ไม่ได้ดึงจาก API → ใช้ข้อมูลสำรองจาก localStorage
+      const raw = localStorage.getItem("lastOrder");
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (!parsed.status) parsed.status = "placed";
+          // เผื่อรองรับ premium tooltip ถ้ามีข้อมูลเวลาใน local
+          parsed.history = parsed.history || {};
+          setData(parsed);
+          return;
+        } catch {}
       }
+      setData(null);
+    })();
+  }, [orderId]);
 
-      throw new Error("ข้อมูลตอบกลับไม่ถูกต้อง");
-    } catch (err) {
-      setError(`สมัครสมาชิกไม่สำเร็จ: ${err.message || ""}`);
-    } finally {
-      setBusy(false);
-    }
+  if (!data || !data.order_id) {
+    return (
+      <div className="rcp">
+        <div className="rcp__box">
+          <h2>ไม่พบใบเสร็จ</h2>
+          <p>กรุณาทำรายการสั่งซื้อใหม่อีกครั้ง</p>
+        </div>
+      </div>
+    );
   }
 
+  const method = (data.method || "unknown").toUpperCase();
+  const pay = data.payload || {};
+  const cardMasked = pay.card_number ? mask(pay.card_number) : null;
+
   return (
-    <div style={{ maxWidth: 520, margin: "40px auto", padding: "0 16px" }}>
-      <h2 style={{ marginBottom: 10, textAlign: "center" }}>สมัครสมาชิก</h2>
-      <form
-        onSubmit={handleRegister}
-        style={{
-          background: "#fff",
-          border: "1px solid #eee",
-          borderRadius: 12,
-          padding: 16,
-          boxShadow: "0 8px 24px rgba(0,0,0,.05)",
-        }}
-      >
-        {/* form เดิมทั้งหมดคงไว้ */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-          <label>Username</label>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="yourname"
-            required
-            style={{ height: 40, border: "1px solid #e5e7eb", borderRadius: 10, padding: "0 10px" }}
-          />
-        </div>
+    <div className="rcp">
+      {/* ✅ แสดงแถบติดตามสถานะ (รถวิ่ง) ด้านบนกล่องใบเสร็จ */}
+      <div style={{ maxWidth: 960, margin: "0 auto 16px" }}>
+        <OrderTracking
+          status={data.status || "placed"}
+          etaText={data.eta_text || undefined}
+          history={data.history || undefined}
+        />
+      </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-          <label>ชื่อที่แสดง</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="ชื่อ-นามสกุล หรือชื่อเล่น"
-            required
-            style={{ height: 40, border: "1px solid #e5e7eb", borderRadius: 10, padding: "0 10px" }}
-          />
-        </div>
+      <div className="rcp__box">
+        <h2>ใบเสร็จรับเงิน</h2>
+        {data.demo && <div className="rcp__tag">DEMO</div>}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-          <label>อีเมล</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            type="email"
-            required
-            style={{ height: 40, border: "1px solid #e5e7eb", borderRadius: 10, padding: "0 10px" }}
-          />
-        </div>
+        <div className="rcp__row"><span>หมายเลขใบเสร็จ</span><b>#{data.order_id}</b></div>
+        <div className="rcp__row"><span>วันที่</span><b>{new Date(data.at).toLocaleString()}</b></div>
+        <div className="rcp__row"><span>วิธีชำระเงิน</span><b>{method}</b></div>
+        {cardMasked && <div className="rcp__row"><span>หมายเลขบัตร</span><b>{cardMasked}</b></div>}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
-          <label>รหัสผ่าน</label>
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            type="password"
-            required
-            style={{ height: 40, border: "1px solid #e5e7eb", borderRadius: 10, padding: "0 10px" }}
-          />
-        </div>
-
-        {error && (
-          <div style={{ color: "#b91c1c", background: "#fee2e2", border: "1px solid #fecaca", padding: 8, borderRadius: 8, marginBottom: 10 }}>
-            {error}
+        <div className="rcp__table">
+          <div className="rcp__thead"><span>รายการ</span><span>จำนวน</span><span>ราคา</span></div>
+          {data.items?.map((i, idx) => (
+            <div className="rcp__tr" key={idx}>
+              <span>{i.name}</span>
+              <span>{i.quantity}</span>
+              <span>฿{(Number(i.price) * Number(i.quantity)).toFixed(2)}</span>
+            </div>
+          ))}
+          <div className="rcp__tfoot">
+            <span>ยอดรวม</span>
+            <span />
+            <b>฿{Number(data.total || 0).toFixed(2)}</b>
           </div>
-        )}
-
-        <button
-          disabled={busy}
-          style={{
-            width: "100%", height: 44, border: 0, borderRadius: 12,
-            background: "#111", color: "#fff", fontWeight: 800, cursor: "pointer",
-          }}
-        >
-          {busy ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
-        </button>
-
-        <div style={{ marginTop: 8, textAlign: "center" }}>
-          มีบัญชีอยู่แล้ว? <a href="/login">เข้าสู่ระบบ</a>
         </div>
-      </form>
+
+        <div className="rcp__actions">
+          <a href="/" className="rcp__btn">กลับหน้าแรก</a>
+          <button className="rcp__btn ghost" onClick={() => window.print()}>พิมพ์</button>
+        </div>
+      </div>
     </div>
   );
 }

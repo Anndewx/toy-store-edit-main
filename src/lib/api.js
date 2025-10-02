@@ -5,7 +5,11 @@ const BASE_URL = import.meta?.env?.VITE_API_BASE || "http://localhost:3001";
 
 // ===== Auth header helper =====
 function authHeaders(extra = {}) {
-  const token = localStorage.getItem("token");
+  // ✅ เพิ่ม fallback เผื่อเก็บ token คนละ key
+  const token =
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    sessionStorage.getItem("token");
   return token ? { ...extra, Authorization: `Bearer ${token}` } : { ...extra };
 }
 
@@ -21,7 +25,6 @@ async function http(method, path, body, options = {}) {
     credentials: "include",
   });
 
-  // แปลงเป็น JSON ถ้าเป็น 204 จะคืน null
   const isJSON = (res.headers.get("content-type") || "").includes("application/json");
   if (!res.ok) {
     let errDetail = isJSON ? await res.json().catch(() => ({})) : await res.text().catch(() => "");
@@ -53,10 +56,7 @@ export const fetchNewProducts  = (limit = 12, options)  => get(`/products/new?li
 // =====================================================================
 export const fetchCart      = (options)                               => get(`/cart`, options);
 export const addToCart      = (product_id, quantity = 1, options)     => post(`/cart`, { product_id, quantity }, options);
-
-// ✅ จุดสำคัญ — ใช้ PATCH /cart/:id สำหรับอัปเดตจำนวน
 export const updateCartQty  = (product_id, quantity, options)         => patch(`/cart/${product_id}`, { quantity }, options);
-
 export const removeFromCart = (product_id, options)                   => del(`/cart/${product_id}`, options);
 export const clearCart      = (options)                               => del(`/cart`, options);
 
