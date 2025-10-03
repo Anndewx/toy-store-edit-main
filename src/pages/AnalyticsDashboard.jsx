@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  ResponsiveContainer,
-  AreaChart, Area,
-  LineChart, Line,
-  BarChart, Bar,
-  PieChart, Pie, Cell,
-  CartesianGrid, XAxis, YAxis, Tooltip, Legend
-} from "recharts";
+  Chart as ChartJS,
+  CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement,
+  Tooltip, Legend, Filler, Title
+} from "chart.js";
+import { Line, Bar, Doughnut } from "react-chartjs-2";
 import "./AnalyticsDashboard.css";
 
+// ลงทะเบียน Chart.js
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement,
+  Tooltip, Legend, Filler, Title
+);
+
 /** -------------------------------
- *  🔧 Mock API: จำลองดึงข้อมูล
- *  (ภายหลังสลับเป็น fetch('/api/...') ได้เลย)
+ *  🔧 Mock API (เหมือนไฟล์เดิมของคุณ)
  *-------------------------------- */
 function fakeFetch() {
   return new Promise((resolve) => {
@@ -63,24 +66,16 @@ function fakeFetch() {
         { sku:"B-GROOT", name:"Baby Groot", price: 39.78, sold: 160, stock: 8 },
       ];
 
-      resolve({
-        trend,
-        kpis,
-        byCategory,
-        channels,
-        topProducts,
-        updatedAt: today.toISOString()
-      });
-    }, 1200); // จำลองโหลด ~1.2s
+      resolve({ trend, kpis, byCategory, channels, topProducts, updatedAt: today.toISOString() });
+    }, 900);
   });
 }
 
 const COLORS = ["#38bdf8","#a78bfa","#22c55e","#f59e0b","#ef4444"];
-
-function fmtMoney(n=0) {
+const fmtMoney = (n=0) => {
   try { return n.toLocaleString("en-US",{ style:"currency", currency:"USD" }); }
   catch { return `$${Number(n).toFixed(2)}`; }
-}
+};
 
 export default function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
@@ -107,13 +102,110 @@ export default function AnalyticsDashboard() {
   const lastMonth = useMemo(() => data?.trend?.at(-1) ?? null, [data]);
   const updatedText = useMemo(() => data?.updatedAt ? new Date(data.updatedAt).toLocaleString() : "-", [data]);
 
+  // ====== Chart.js datasets/options ======
+  const lineData = useMemo(() => {
+    if (!data) return null;
+    return {
+      labels: data.trend.map(d => d.month),
+      datasets: [
+        {
+          type: "line",
+          label: "Revenue",
+          data: data.trend.map(d => d.revenue),
+          borderColor: COLORS[0],
+          backgroundColor: "rgba(56,189,248,0.18)",
+          fill: true,
+          tension: 0.35,
+          yAxisID: "y1",
+          pointRadius: 2,
+          borderWidth: 2,
+        },
+        {
+          type: "line",
+          label: "Orders",
+          data: data.trend.map(d => d.orders),
+          borderColor: COLORS[1],
+          backgroundColor: COLORS[1],
+          fill: false,
+          tension: 0.35,
+          yAxisID: "y2",
+          pointRadius: 2,
+          borderWidth: 2,
+        },
+      ],
+    };
+  }, [data]);
+
+  const lineOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { labels: { color: "#cbd5e1" } },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ctx.dataset.label === "Revenue" ? fmtMoney(ctx.raw) : `${ctx.raw}`,
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: "#cbd5e1" }, grid: { color: "#394150" } },
+      y1:{ position:"left", ticks:{ color:"#cbd5e1", callback:(v)=>`${Math.round(v/1000)}k`}, grid:{ color:"#394150" } },
+      y2:{ position:"right", ticks:{ color:"#cbd5e1" }, grid:{ drawOnChartArea:false } },
+    }
+  }), []);
+
+  const barData = useMemo(() => {
+    if (!data) return null;
+    return {
+      labels: data.byCategory.map(d => d.name),
+      datasets: [{
+        label: "Sales",
+        data: data.byCategory.map(d => d.value),
+        backgroundColor: "rgba(56,189,248,0.6)",
+        borderColor: COLORS[0],
+        borderWidth: 1,
+        borderRadius: 10,
+      }]
+    };
+  }, [data]);
+
+  const barOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { ticks: { color: "#cbd5e1" }, grid: { color: "#394150" } },
+      y: { ticks: { color: "#cbd5e1", callback:(v)=>`${Math.round(v/1000)}k` }, grid: { color: "#394150" } },
+    },
+    plugins: { legend: { labels: { color: "#cbd5e1" } } }
+  }), []);
+
+  const pieData = useMemo(() => {
+    if (!data) return null;
+    return {
+      labels: data.channels.map(d => d.name),
+      datasets: [{
+        data: data.channels.map(d => d.value),
+        backgroundColor: COLORS,
+        borderColor: "#0b1220",
+        borderWidth: 2,
+      }]
+    };
+  }, [data]);
+
+  const pieOptions = useMemo(() => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: "#cbd5e1" } } }
+  }), []);
+
   return (
     <div className="dash">
       {/* Header */}
       <header className="dash__head">
         <div>
           <h1>Sales Analytics</h1>
-          <p>ภาพรวมประสิทธิภาพการขายของร้านคุณแบบเรียลไทม์</p>
+        <p>ภาพรวมประสิทธิภาพการขายของร้านคุณแบบเรียลไทม์</p>
         </div>
         <div className="dash__updated">อัปเดตล่าสุด: {updatedText}</div>
       </header>
@@ -131,9 +223,7 @@ export default function AnalyticsDashboard() {
 
       {/* Error */}
       {!loading && error && (
-        <div className="dash__error">
-          {error}
-        </div>
+        <div className="dash__error">{error}</div>
       )}
 
       {/* Content */}
@@ -152,25 +242,14 @@ export default function AnalyticsDashboard() {
             <article className="card">
               <h3>Revenue & Orders (12M)</h3>
               <div className="chart">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedTrend data={data.trend} />
-                </ResponsiveContainer>
+                {lineData && <Line data={lineData} options={lineOptions} />}
               </div>
             </article>
 
             <article className="card">
               <h3>Sales by Category</h3>
               <div className="chart">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.byCategory}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#394150" />
-                    <XAxis dataKey="name" stroke="#cbd5e1" />
-                    <YAxis stroke="#cbd5e1" tickFormatter={(v)=> (v/1000)+"k"} />
-                    <Tooltip formatter={(v)=>fmtMoney(v)} contentStyle={{ background:"#0b1220", border:"1px solid #1f2937", borderRadius:10, color:"#e5e7eb" }} />
-                    <Legend />
-                    <Bar dataKey="value" radius={[10,10,0,0]} fill={COLORS[0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                {barData && <Bar data={barData} options={barOptions} />}
               </div>
             </article>
           </section>
@@ -180,15 +259,7 @@ export default function AnalyticsDashboard() {
             <article className="card">
               <h3>Channel Mix</h3>
               <div className="chart">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip contentStyle={{ background:"#0b1220", border:"1px solid #1f2937", borderRadius:10, color:"#e5e7eb" }} />
-                    <Legend />
-                    <Pie data={data.channels} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2}>
-                      {data.channels.map((_, i) => <Cell key={i} fill={COLORS[i%COLORS.length]} />)}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
+                {pieData && <Doughnut data={pieData} options={pieOptions} />}
               </div>
             </article>
 
@@ -232,49 +303,5 @@ function Kpi({ title, value, sub, trend }) {
         </div>
       )}
     </div>
-  );
-}
-
-function ComposedTrend({ data }) {
-  return (
-    <LineChart data={data}>
-      <CartesianGrid strokeDasharray="3 3" stroke="#394150" />
-      <XAxis dataKey="month" stroke="#cbd5e1" />
-      <YAxis yAxisId="left" stroke="#cbd5e1" tickFormatter={(v)=> (v/1000)+"k"} />
-      <YAxis yAxisId="right" orientation="right" stroke="#cbd5e1" />
-      <Tooltip
-        contentStyle={{ background:"#0b1220", border:"1px solid #1f2937", borderRadius:10, color:"#e5e7eb" }}
-        formatter={(v, name) => name === "revenue" ? fmtMoney(v) : v}
-      />
-      <Legend />
-      <Area
-        yAxisId="left"
-        type="monotone"
-        dataKey="revenue"
-        stroke="#38bdf8"
-        fill="url(#revGrad)"
-        strokeWidth={2}
-        dot={{ r: 2 }}
-        isAnimationActive={false}
-        activeDot={{ r: 4 }}
-      />
-      <Line
-        yAxisId="right"
-        type="monotone"
-        dataKey="orders"
-        stroke="#a78bfa"
-        strokeWidth={2}
-        dot={{ r: 1.8 }}
-        isAnimationActive={false}
-      />
-
-      {/* Gradient for Area */}
-      <defs>
-        <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.45}/>
-          <stop offset="100%" stopColor="#38bdf8" stopOpacity={0.05}/>
-        </linearGradient>
-      </defs>
-    </LineChart>
   );
 }
