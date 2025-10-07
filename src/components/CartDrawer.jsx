@@ -2,6 +2,24 @@ import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import "./CartDrawer.css";
 
+/** ให้ URL รูปเป็นแบบ absolute เหมือนหน้า ProductDetail */
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  `${window.location.protocol}//${window.location.hostname}:3001`;
+
+function resolveImageSrc(obj) {
+  const raw0 = obj?.image_url ?? obj?.image ?? "";
+  const raw = String(raw0 || "").trim();
+  if (!raw) return "/images/placeholder.jpg";
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const onlyFile = /^[^/\\]+\.[a-z0-9]{2,5}$/i.test(raw);
+  if (onlyFile) return `${API_BASE}/images/${raw}`;
+  if (raw.startsWith("/images")) return `${API_BASE}${raw}`;
+  if (raw.startsWith("images"))  return `${API_BASE}/${raw}`;
+  if (raw.startsWith("/"))       return `${API_BASE}${raw}`;
+  return `${API_BASE}/${raw}`;
+}
+
 export default function CartDrawer() {
   const { items, subtotal, remove, updateQty, clear } = useCart();
   const [open, setOpen] = useState(false);
@@ -34,7 +52,12 @@ export default function CartDrawer() {
           ) : (
             items.map((i) => (
               <div className="cd__row" key={i.product_id}>
-                <img className="cd__thumb" src={i.image_url} alt={i.name} />
+                <img
+                  className="cd__thumb"
+                  src={resolveImageSrc(i)}
+                  alt={i.name}
+                  onError={(e)=>{e.currentTarget.onerror=null; e.currentTarget.src="/images/placeholder.jpg";}}
+                />
                 <div className="cd__grow">
                   <div className="cd__name">{i.name}</div>
                   <div className="cd__muted">

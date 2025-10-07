@@ -4,12 +4,11 @@ import { pool } from "../db.js";
 
 const router = express.Router();
 
-// ใช้ user_id = 1 เป็นค่าเริ่ม ถ้าไม่มีระบบ auth จริง
 function getUserId(req) {
   return req.user?.id || req.user_id || 1;
 }
 
-/** GET /api/orders – รายการคำสั่งซื้อของผู้ใช้ */
+/** GET ทั้งหมด (เดิม) */
 router.get("/", async (req, res) => {
   try {
     const user_id = getUserId(req);
@@ -27,7 +26,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-/** GET /api/orders/:id – รายละเอียดคำสั่งซื้อ + รายการสินค้า */
+/** GET รายการเดียว (เดิม) */
 router.get("/:id", async (req, res) => {
   try {
     const user_id = getUserId(req);
@@ -57,15 +56,14 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/** POST /api/orders – สร้างออเดอร์จากตะกร้า: เช็คสต็อก, บันทึก, ตัดสต็อก, ล้างตะกร้า */
+/** POST สร้างออเดอร์ (เดิม) */
 router.post("/", async (req, res) => {
   const conn = await pool.getConnection();
   try {
     const user_id = getUserId(req);
-    const { payment_method } = req.body; // <= รับวิธีชำระเงินจากฝั่งเว็บ
+    const { payment_method } = req.body;
     await conn.beginTransaction();
 
-    // อ่านจากตะกร้า
     const [cartItems] = await conn.query(
       `SELECT c.product_id, c.quantity, p.price, p.name,
               COALESCE(i.quantity, 0) AS stock
@@ -81,7 +79,6 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Cart is empty" });
     }
 
-    // เช็คสต็อก
     for (const it of cartItems) {
       if (Number(it.stock) < Number(it.quantity)) {
         await conn.rollback();
@@ -97,7 +94,6 @@ router.post("/", async (req, res) => {
       0
     );
 
-    // บันทึก orders (เก็บ payment_method ต่อออเดอร์)
     const [orderResult] = await conn.query(
       `INSERT INTO orders (user_id, total_price, payment_method, status)
        VALUES (?, ?, ?, 'placed')`,
@@ -105,7 +101,6 @@ router.post("/", async (req, res) => {
     );
     const orderId = orderResult.insertId;
 
-    // บันทึกรายการ + ตัดสต็อก
     for (const it of cartItems) {
       await conn.query(
         `INSERT INTO order_details (order_id, product_id, quantity, price)
@@ -119,9 +114,7 @@ router.post("/", async (req, res) => {
       );
     }
 
-    // ล้างตะกร้า
     await conn.query(`DELETE FROM cart WHERE user_id = ?`, [user_id]);
-
     await conn.commit();
     res.json({ ok: true, order_id: orderId, total });
   } catch (e) {
@@ -133,7 +126,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-/** PATCH /api/orders/:id/status – อัปเดตสถานะออเดอร์ */
+/** PATCH อัปเดตสถานะ (เดิม) */
 router.patch("/:id/status", async (req, res) => {
   try {
     const orderId = Number(req.params.id);
@@ -151,6 +144,23 @@ router.patch("/:id/status", async (req, res) => {
   } catch (e) {
     console.error("PATCH /orders/:id/status error:", e);
     res.status(500).json({ error: "Failed to update status" });
+  }
+});
+
+/** 🆕 DELETE /api/orders/:id — ลบออเดอร์ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const user_id = getUserId(req);
+    const orderId = Number(req.params.id);
+    // ✅ ลบเฉพาะของตัวเองเท่านั้น
+    const [r] = await pool.query(
+      `DELETE FROM orders WHERE order_id = ? AND user_id = ?`,
+      [orderId, user_id]
+    );
+    res.json({ ok: r.affectedRows > 0 });
+  } catch (e) {
+    console.error("DELETE /orders/:id error:", e);
+    res.status(500).json({ error: "Failed to delete order" });
   }
 });
 
