@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { createOrder } from "../lib/api"; // ใช้เฉพาะ call จริง
+import { createOrder } from "../lib/api";
 import "./CheckoutPage.css";
 
 export default function CheckoutPage() {
@@ -12,87 +12,64 @@ export default function CheckoutPage() {
   const [showPayModal, setShowPayModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("bank"); // bank | cod | other
 
-  // payload ของฟอร์มตามวิธีชำระเงิน
-  const [bank, setBank] = useState({ bankName: "", last4: "", paidAt: "" });
-  const [cod, setCod] = useState({ receiver: "", phone: "", address: "" });
-  const [other, setOther] = useState({ ref: "", paidAt: "" }); // PromptPay/QR
+  // ───────── payload แต่ละวิธี ─────────
+  const [bank, setBank] = useState({ bankName: "", last4: "", paidAt: "", slip: null });
+  const [cod, setCod]   = useState({ receiver: "", phone: "", note: "" });
+  const [other, setOther] = useState({ ref: "", paidAt: "", slip: null });
 
-  const openPayModal = () => {
-    if (!items.length || processing) return;
-    setShowPayModal(true);
+  const openPayModal = () => { if (!items.length || processing) return; setShowPayModal(true); };
+  const payloadOf = () => (paymentMethod === "bank" ? bank : paymentMethod === "cod" ? cod : other);
+
+  // บันทึก lastOrder + map orderMethods
+  const saveLocalOrder = (data, isDemo = false) => {
+    const now = new Date().toISOString();
+    const receipt = {
+      order_id: data.order_id,
+      items: data.items,
+      total: data.total,
+      method: paymentMethod,     // bank | cod | other
+      payload: payloadOf(),
+      at: now,
+      demo: isDemo,
+    };
+    localStorage.setItem("lastOrder", JSON.stringify(receipt));
+    try {
+      const map = JSON.parse(localStorage.getItem("orderMethods") || "{}");
+      map[String(data.order_id)] = paymentMethod;
+      localStorage.setItem("orderMethods", JSON.stringify(map));
+    } catch {}
   };
-
-  function makeReceiptPayload() {
-    if (paymentMethod === "bank") return bank;
-    if (paymentMethod === "cod") return cod;
-    return other;
-  }
 
   async function confirmPayment() {
     if (!items.length || processing) return;
-
     setProcessing(true);
-    const payload = makeReceiptPayload();
-    const now = new Date().toISOString();
-
-    // ฟังก์ชันบันทึกใบเสร็จลง localStorage เพื่อให้หน้า Receipt ใช้งานทันที
-    const saveLastOrder = (data, isDemo = false) => {
-      const receipt = {
-        order_id: data.order_id,
-        items: data.items,
-        total: data.total,
-        method: paymentMethod,
-        payload,
-        at: now,
-        demo: isDemo,
-      };
-      localStorage.setItem("lastOrder", JSON.stringify(receipt));
-    };
 
     try {
-      // call API จริง (ถ้าพร้อมใช้งาน)
       const resp = await createOrder({ payment_method: paymentMethod });
       if (resp?.ok && resp?.order_id) {
-        // สมมุติ API ตอบกลับ total + items (ตาม server ปัจจุบัน)
-        saveLastOrder(
-          {
-            order_id: resp.order_id,
-            total: Number(resp.total || total || 0),
-            items:
-              resp.items?.map((i) => ({
-                name: i.name,
-                quantity: i.quantity,
-                price: i.price,
-              })) ||
-              items.map((i) => ({
-                name: i.name,
-                quantity: i.quantity,
-                price: i.price,
-              })),
-          },
-          false
-        );
+        const packed = {
+          order_id: resp.order_id,
+          total: Number(resp.total || total || 0),
+          items:
+            resp.items?.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })) ||
+            items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+        };
+        saveLocalOrder(packed, false);
         clear();
         setShowPayModal(false);
         navigate(`/wallet?order=${encodeURIComponent(resp.order_id)}`);
         return;
       }
       throw new Error("createOrder failed");
-    } catch (e) {
-      // Fallback เดโม่ — ไม่แตะ DB
+    } catch {
+      // โหมดเดโม่
       const demoId = `DEMO-${Date.now()}`;
-      saveLastOrder(
-        {
-          order_id: demoId,
-          total: Number(total || 0),
-          items: items.map((i) => ({
-            name: i.name,
-            quantity: i.quantity,
-            price: i.price,
-          })),
-        },
-        true
-      );
+      const packed = {
+        order_id: demoId,
+        total: Number(total || 0),
+        items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+      };
+      saveLocalOrder(packed, true);
       clear();
       setShowPayModal(false);
       navigate(`/wallet?order=${encodeURIComponent(demoId)}`);
@@ -100,6 +77,16 @@ export default function CheckoutPage() {
       setProcessing(false);
     }
   }
+
+  // ข้อมูลบัญชี auto-fill ตามธนาคารที่เลือก (ตัวอย่าง)
+  const bankAccounts = {
+    kbank: { acc: "123-456-7890", name: "บริษัท ทอยสโตร์ จำกัด" },
+    bbl:   { acc: "111-222-3333", name: "บริษัท ทอยสโตร์ จำกัด" },
+    scb:   { acc: "999-888-7777", name: "บริษัท ทอยสโตร์ จำกัด" },
+    ktb:   { acc: "555-444-3333", name: "บริษัท ทอยสโตร์ จำกัด" },
+    gsb:   { acc: "222-333-4444", name: "บริษัท ทอยสโตร์ จำกัด" },
+  };
+  const selectedBank = bankAccounts[bank.bankName];
 
   return (
     <div className="container py-4">
@@ -111,13 +98,8 @@ export default function CheckoutPage() {
           <h5>สรุปคำสั่งซื้อ</h5>
           <ul className="list-group list-group-flush">
             {items.map((item) => (
-              <li
-                key={item.product_id}
-                className="list-group-item d-flex justify-content-between"
-              >
-                <span>
-                  {item.name} x {item.quantity}
-                </span>
+              <li key={item.product_id} className="list-group-item d-flex justify-content-between">
+                <span>{item.name} x {item.quantity}</span>
                 <span>฿{(item.price * item.quantity).toFixed(2)}</span>
               </li>
             ))}
@@ -130,141 +112,125 @@ export default function CheckoutPage() {
       </div>
 
       <div className="d-flex gap-2">
-        <button
-          className="btn btn-secondary"
-          onClick={() => navigate("/cart")}
-          disabled={processing}
-        >
-          ย้อนกลับ
-        </button>
-        <button
-          className="btn btn-success flex-fill"
-          onClick={openPayModal}
-          disabled={processing || !items.length}
-        >
+        <button className="btn btn-secondary" onClick={() => navigate("/cart")} disabled={processing}>ย้อนกลับ</button>
+        <button className="btn btn-success flex-fill" onClick={openPayModal} disabled={processing || !items.length}>
           {processing ? "กำลังดำเนินการ..." : "ยืนยันการชำระเงิน"}
         </button>
       </div>
 
-      {/* Modal เลือกวิธีชำระเงิน + ฟอร์มย่อย */}
+      {/* ───────── Modal ───────── */}
       {showPayModal && (
         <div className="pay-backdrop" onClick={() => !processing && setShowPayModal(false)}>
           <div className="pay-box" onClick={(e) => e.stopPropagation()}>
             <h4>เลือกวิธีชำระเงิน</h4>
 
             <div className="pay-options">
-              <div
-                className={`pay-card ${paymentMethod === "bank" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("bank")}
-              >
-                🏦 โอนธนาคาร
-              </div>
-              <div
-                className={`pay-card ${paymentMethod === "cod" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("cod")}
-              >
-                📦 เก็บเงินปลายทาง
-              </div>
-              <div
-                className={`pay-card ${paymentMethod === "other" ? "active" : ""}`}
-                onClick={() => setPaymentMethod("other")}
-              >
-                💳 PromptPay
-              </div>
+              <div className={`pay-card ${paymentMethod === "bank" ? "active" : ""}`} onClick={() => setPaymentMethod("bank")}>🏦 โอนธนาคาร</div>
+              <div className={`pay-card ${paymentMethod === "cod" ? "active" : ""}`}  onClick={() => setPaymentMethod("cod")}>📦 เก็บเงินปลายทาง</div>
+              <div className={`pay-card ${paymentMethod === "other" ? "active" : ""}`} onClick={() => setPaymentMethod("other")}>💳 PromptPay</div>
             </div>
 
-            {/* ฟอร์มย่อยตามวิธี */}
+            {/* ─── โอนธนาคาร ─── */}
             {paymentMethod === "bank" && (
-              <div className="pay-form">
-                <div className="mb-2">
-                  <label className="form-label">ธนาคาร</label>
-                  <input
-                    className="form-control"
-                    placeholder="เช่น กสิกรไทย"
-                    value={bank.bankName}
-                    onChange={(e) => setBank({ ...bank, bankName: e.target.value })}
-                  />
+              <div className="pay-form mt-3">
+                <div className="bank-logos">
+                  {[
+                    { id: "kbank", name: "กสิกรไทย", img: "/images/bank/kbank.png" },
+                    { id: "bbl",   name: "กรุงเทพ",   img: "/images/bank/bbl.png" },
+                    { id: "scb",   name: "ไทยพาณิชย์", img: "/images/bank/scb.png" },
+                    { id: "ktb",   name: "กรุงไทย",   img: "/images/bank/ktb.png" },
+                    { id: "gsb",   name: "ออมสิน",    img: "/images/bank/gsb.png" },
+                  ].map((b) => (
+                    <label key={b.id} className={`bank-option ${bank.bankName === b.id ? "active" : ""}`}>
+                      <input type="radio" name="bank-select" value={b.id}
+                        checked={bank.bankName === b.id}
+                        onChange={() => setBank({ ...bank, bankName: b.id })}/>
+                      <img src={b.img} alt={b.name} onError={(e)=>{e.currentTarget.style.display='none';}}/>
+                      <span>{b.name}</span>
+                    </label>
+                  ))}
                 </div>
-                <div className="mb-2">
-                  <label className="form-label">เลขบัญชี (4 ตัวท้าย)</label>
-                  <input
-                    className="form-control"
-                    maxLength={4}
-                    value={bank.last4}
-                    onChange={(e) =>
-                      setBank({ ...bank, last4: e.target.value.replace(/\D/g, "").slice(0, 4) })
-                    }
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">เวลาที่โอน</label>
-                  <input
-                    type="datetime-local"
-                    className="form-control"
-                    value={bank.paidAt}
-                    onChange={(e) => setBank({ ...bank, paidAt: e.target.value })}
-                  />
-                </div>
+
+                <label className="form-label">เลือกธนาคาร</label>
+                <select className="form-select mb-2" value={bank.bankName} onChange={(e) => setBank({ ...bank, bankName: e.target.value })} required>
+                  <option value="">-- เลือกธนาคาร --</option>
+                  <option value="kbank">🏦 กสิกรไทย</option>
+                  <option value="bbl">🏦 กรุงเทพ</option>
+                  <option value="scb">🏦 ไทยพาณิชย์</option>
+                  <option value="ktb">🏦 กรุงไทย</option>
+                  <option value="gsb">🏦 ออมสิน</option>
+                </select>
+
+                {selectedBank && (
+                  <>
+                    <div className="mb-2">
+                      <label className="form-label">เลขบัญชี</label>
+                      <div className="copy-row">
+                        <input className="form-control" value={selectedBank.acc} readOnly />
+                        <button type="button" className="btn btn-sm btn-outline-warning copy-btn"
+                          onClick={() => navigator.clipboard.writeText(selectedBank.acc)}>คัดลอก</button>
+                      </div>
+                    </div>
+                    <div className="mb-2">
+                      <label className="form-label">ชื่อบัญชีผู้รับ</label>
+                      <input className="form-control" value={selectedBank.name} readOnly />
+                    </div>
+                  </>
+                )}
+
+                <label className="form-label">เลขบัญชี (4 ตัวท้าย)</label>
+                <input className="form-control mb-2" maxLength={4} value={bank.last4} placeholder="กรอก 4 ตัวท้ายจากสลิป"
+                  onChange={(e) => setBank({ ...bank, last4: e.target.value.replace(/\D/g, "").slice(0, 4) })} required />
+
+                <label className="form-label">เวลาที่โอน</label>
+                <input type="datetime-local" className="form-control mb-2" value={bank.paidAt}
+                  onChange={(e) => setBank({ ...bank, paidAt: e.target.value })} required />
+
+                <label className="form-label">อัปโหลดสลิป</label>
+                <input type="file" accept="image/*" className="form-control"
+                  onChange={(e) => setBank({ ...bank, slip: e.target.files?.[0] || null })} required />
               </div>
             )}
 
+            {/* ─── COD ─── */}
             {paymentMethod === "cod" && (
-              <div className="pay-form">
-                <div className="mb-2">
-                  <label className="form-label">ผู้รับ</label>
-                  <input
-                    className="form-control"
-                    value={cod.receiver}
-                    onChange={(e) => setCod({ ...cod, receiver: e.target.value })}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">โทร</label>
-                  <input
-                    className="form-control"
-                    value={cod.phone}
-                    onChange={(e) => setCod({ ...cod, phone: e.target.value })}
-                  />
-                </div>
-                <div className="mb-2">
-                  <label className="form-label">ที่อยู่จัดส่ง</label>
-                  <textarea
-                    rows={3}
-                    className="form-control"
-                    value={cod.address}
-                    onChange={(e) => setCod({ ...cod, address: e.target.value })}
-                  />
-                </div>
+              <div className="pay-form mt-3">
+                <label className="form-label">ชื่อผู้รับ</label>
+                <input className="form-control mb-2" placeholder="ชื่อ-นามสกุล"
+                  value={cod.receiver} onChange={(e) => setCod({ ...cod, receiver: e.target.value })} required />
+                <label className="form-label">เบอร์โทร</label>
+                <input className="form-control mb-2" placeholder="เช่น 0812345678"
+                  value={cod.phone} onChange={(e) => setCod({ ...cod, phone: e.target.value })} required />
+                <label className="form-label">หมายเหตุ (ถ้ามี)</label>
+                <textarea rows={2} className="form-control" placeholder="เช่น กรุณาโทรก่อนส่ง / ฝากไว้กับ รปภ."
+                  value={cod.note} onChange={(e) => setCod({ ...cod, note: e.target.value })}/>
               </div>
             )}
 
+            {/* ─── PromptPay ─── */}
             {paymentMethod === "other" && (
-              <div className="pay-form">
-                <div className="mb-2">
-                  <label className="form-label">รหัสอ้างอิง / Ref</label>
-                  <input
-                    className="form-control"
-                    placeholder="เช่น QR-2024-xxxxx"
-                    value={other.ref}
-                    onChange={(e) => setOther({ ...other, ref: e.target.value })}
-                  />
+              <div className="pay-form mt-3">
+                <label className="form-label">สแกน QR เพื่อชำระเงิน</label>
+                <div className="pay__qr text-center mb-3">
+                  <img src="/images/qr-promptpay.png" alt="PromptPay QR" style={{ width: 240, borderRadius: 12 }}/>
                 </div>
-                <div className="mb-2">
-                  <label className="form-label">เวลาที่ชำระ</label>
-                  <input
-                    type="datetime-local"
-                    className="form-control"
-                    value={other.paidAt}
-                    onChange={(e) => setOther({ ...other, paidAt: e.target.value })}
-                  />
-                </div>
+
+                <label className="form-label">เวลาที่ชำระ</label>
+                <input type="datetime-local" className="form-control mb-2"
+                  value={other.paidAt} onChange={(e) => setOther({ ...other, paidAt: e.target.value })} required />
+
+                <label className="form-label">รหัสอ้างอิง / Ref (ถ้ามี)</label>
+                <input className="form-control mb-2" placeholder="เช่น QR-2024-xxxxx"
+                  value={other.ref} onChange={(e) => setOther({ ...other, ref: e.target.value })} />
+
+                <label className="form-label">อัปโหลดสลิป</label>
+                <input type="file" accept="image/*" className="form-control"
+                  onChange={(e) => setOther({ ...other, slip: e.target.files?.[0] || null })} required />
               </div>
             )}
 
             <div className="d-flex justify-content-end mt-3">
-              <button className="btn btn-danger me-2" onClick={() => !processing && setShowPayModal(false)}>
-                ยกเลิก
-              </button>
+              <button className="btn btn-danger me-2" onClick={() => !processing && setShowPayModal(false)}>ยกเลิก</button>
               <button className="btn btn-primary" onClick={confirmPayment} disabled={processing}>
                 {processing ? "กำลังยืนยัน..." : "ยืนยันการชำระเงิน"}
               </button>

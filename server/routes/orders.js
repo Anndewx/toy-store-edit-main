@@ -14,7 +14,7 @@ router.get("/", async (req, res) => {
   try {
     const user_id = getUserId(req);
     const [rows] = await pool.query(
-      `SELECT order_id, user_id, total_price, status, created_at
+      `SELECT order_id, user_id, total_price, payment_method, status, created_at
        FROM orders
        WHERE user_id = ?
        ORDER BY order_id DESC`,
@@ -34,7 +34,7 @@ router.get("/:id", async (req, res) => {
     const orderId = Number(req.params.id);
 
     const [[order]] = await pool.query(
-      `SELECT order_id, user_id, total_price, status, created_at
+      `SELECT order_id, user_id, total_price, payment_method, status, created_at
        FROM orders
        WHERE order_id = ? AND user_id = ?`,
       [orderId, user_id]
@@ -62,6 +62,7 @@ router.post("/", async (req, res) => {
   const conn = await pool.getConnection();
   try {
     const user_id = getUserId(req);
+    const { payment_method } = req.body; // <= รับวิธีชำระเงินจากฝั่งเว็บ
     await conn.beginTransaction();
 
     // อ่านจากตะกร้า
@@ -96,15 +97,15 @@ router.post("/", async (req, res) => {
       0
     );
 
-    // บันทึก orders (เปลี่ยนจาก 'completed' → 'placed' สำหรับ tracking เริ่มต้น)
+    // บันทึก orders (เก็บ payment_method ต่อออเดอร์)
     const [orderResult] = await conn.query(
-      `INSERT INTO orders (user_id, total_price, status)
-       VALUES (?, ?, 'placed')`,
-      [user_id, total]
+      `INSERT INTO orders (user_id, total_price, payment_method, status)
+       VALUES (?, ?, ?, 'placed')`,
+      [user_id, total, payment_method || null]
     );
     const orderId = orderResult.insertId;
 
-    // บันทึกออเดอร์ไอเท็ม + ตัดสต็อก
+    // บันทึกรายการ + ตัดสต็อก
     for (const it of cartItems) {
       await conn.query(
         `INSERT INTO order_details (order_id, product_id, quantity, price)

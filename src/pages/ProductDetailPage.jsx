@@ -59,9 +59,9 @@ export default function ProductDetailPage() {
           <div className="pd__meta">คงเหลือในสต็อก: {stock}</div>
 
           <div className="pd__price">
-            <span className="price">${Number(price).toFixed(2)}</span>
+            <span className="price">฿{Number(price).toFixed(2)}</span>
             {Number(original_price) > Number(price) && (
-              <span className="ori">${Number(original_price).toFixed(2)}</span>
+              <span className="ori">฿{Number(original_price).toFixed(2)}</span>
             )}
           </div>
 

@@ -1,17 +1,28 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import "./ReceiptPage.css";
-
-// ✅ เพิ่ม: ดึง helper ที่แนบ Authorization ให้อัตโนมัติ
 import { get } from "../lib/api";
-// ✅ เพิ่ม: คอมโพเนนต์แถบติดตามสถานะ
 import OrderTracking from "../components/OrderTracking";
 
-function mask(s = "", left = 4, right = 2) {
-  const str = String(s).replace(/\s/g, "");
-  if (str.length <= left + right) return "****";
-  return str.slice(0, left) + "****".repeat(3) + str.slice(-right);
-}
+const paymentLabel = (v) => {
+  switch ((v || "").toLowerCase()) {
+    case "bank":      return "โอนธนาคาร";
+    case "cod":       return "เก็บเงินปลายทาง (COD)";
+    case "other":
+    case "promptpay": return "PromptPay (สแกน QR)";
+    case "card":
+    case "credit":    return "บัตรเครดิต/เดบิต";
+    default:          return "—";
+  }
+};
+const paymentKey = (v) => {
+  const k = String(v || "").toLowerCase();
+  if (["other", "promptpay"].includes(k)) return "promptpay";
+  if (["card", "credit"].includes(k)) return "card";
+  if (["bank", "cod"].includes(k)) return k;
+  return "unknown";
+};
+const thb = (n) => `฿${Number(n || 0).toFixed(2)}`;
 
 export default function ReceiptPage() {
   const { search } = useLocation();
@@ -20,102 +31,101 @@ export default function ReceiptPage() {
 
   useEffect(() => {
     (async () => {
-      // ถ้ามี order param → ดึงจาก API
-      if (orderId) {
+      try {
+        if (!orderId) throw new Error("no id");
+        const json = await get(`/orders/${encodeURIComponent(orderId)}`); // { order, items }
+        const order = json.order || {};
+        const items = Array.isArray(json.items) ? json.items : [];
+
+        let map = {}, last = {};
+        try { map = JSON.parse(localStorage.getItem("orderMethods") || "{}"); } catch {}
+        try { last = JSON.parse(localStorage.getItem("lastOrder") || "{}"); } catch {}
+
+        const methodRaw = order.payment_method || map[String(order.order_id)] || last.method;
+
+        setData({
+          id: order.order_id,
+          at: order.created_at,
+          status: order.status || "placed",
+          method: methodRaw,
+          items,
+          total: Number(order.total_price || 0)
+        });
+      } catch {
         try {
-          // ⛔️ เดิม: fetch(`/api/orders/${orderId}`) → 401 เพราะไม่มี Bearer
-          // ✅ ใหม่: ใช้ get() จาก lib/api (แนบ Authorization อัตโนมัติ)
-          const json = await get(`/orders/${encodeURIComponent(orderId)}`); // { order, items }
-
-          const order = json.order || {};
-          const items = (json.items || []).map((i) => ({
-            name: i.name,
-            quantity: i.quantity,
-            price: i.price,
-          }));
-
-          setData({
-            order_id: order.order_id,
-            at: order.created_at,
-            method: "unknown", // ฝั่ง server ยังไม่เก็บ method → แสดง unknown
-            payload: {},
-            items,
-            total: Number(order.total_price || 0),
-            demo: false,
-            // ✅ เก็บสถานะสำหรับแถบติดตาม
-            status: order.status || "placed",
-          });
-          return;
-        } catch {
-          // ถ้าเรียก API ไม่สำเร็จ จะไปใช้ข้อมูลสำรองด้านล่าง
-        }
-      }
-
-      // ไม่ได้ดึงจาก API → ใช้ข้อมูลสำรองจาก localStorage
-      const raw = localStorage.getItem("lastOrder");
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw);
-          // เผื่อไม่มี status ในข้อมูลสำรอง
-          if (!parsed.status) parsed.status = "placed";
-          setData(parsed);
-          return;
+          const last = JSON.parse(localStorage.getItem("lastOrder") || "{}");
+          if (last?.order_id) {
+            setData({
+              id: last.order_id,
+              at: last.at,
+              status: last.status || "placed",
+              method: last.method,
+              items: last.items || [],
+              total: Number(last.total || 0),
+            });
+          }
         } catch {}
       }
-      setData(null);
     })();
   }, [orderId]);
 
-  if (!data || !data.order_id) {
-    return (
-      <div className="rcp">
-        <div className="rcp__box">
-          <h2>ไม่พบใบเสร็จ</h2>
-          <p>กรุณาทำรายการสั่งซื้อใหม่อีกครั้ง</p>
-        </div>
-      </div>
-    );
-  }
+  if (!data) return <div className="container py-4">กำลังโหลด...</div>;
 
-  const method = (data.method || "unknown").toUpperCase();
-  const pay = data.payload || {};
-  const cardMasked = pay.card_number ? mask(pay.card_number) : null;
+  const methodText = paymentLabel(data.method);
+  const methodCls = `pay-badge ${paymentKey(data.method)}`;
 
   return (
-    <div className="rcp">
-      {/* ✅ แสดงแถบติดตามสถานะ (รถวิ่ง) ด้านบนกล่องใบเสร็จ */}
-      <div style={{ maxWidth: 960, margin: "0 auto 16px" }}>
+    <div className="container py-4" style={{ maxWidth: 1040 }}>
+      <div className="mb-3">
         <OrderTracking status={data.status || "placed"} />
       </div>
 
-      <div className="rcp__box">
-        <h2>ใบเสร็จรับเงิน</h2>
-        {data.demo && <div className="rcp__tag">DEMO</div>}
+      <div className="rc__card">
+        {/* หัวการ์ด */}
+        <div className="rc__head">
+          <h2 className="rc__title">ใบเสร็จรับเงิน</h2>
+          <div className="rc__id">#{data.id}</div>
+        </div>
 
-        <div className="rcp__row"><span>หมายเลขใบเสร็จ</span><b>#{data.order_id}</b></div>
-        <div className="rcp__row"><span>วันที่</span><b>{new Date(data.at).toLocaleString()}</b></div>
-        <div className="rcp__row"><span>วิธีชำระเงิน</span><b>{method}</b></div>
-        {cardMasked && <div className="rcp__row"><span>หมายเลขบัตร</span><b>{cardMasked}</b></div>}
-
-        <div className="rcp__table">
-          <div className="rcp__thead"><span>รายการ</span><span>จำนวน</span><span>ราคา</span></div>
-          {data.items?.map((i, idx) => (
-            <div className="rcp__tr" key={idx}>
-              <span>{i.name}</span>
-              <span>{i.quantity}</span>
-              <span>฿{(Number(i.price) * Number(i.quantity)).toFixed(2)}</span>
-            </div>
-          ))}
-          <div className="rcp__tfoot">
-            <span>ยอดรวม</span>
-            <span />
-            <b>฿{Number(data.total || 0).toFixed(2)}</b>
+        {/* meta */}
+        <div className="rc__meta">
+          <div className="rc__meta-row">
+            <span>วันที่</span>
+            <b>{data.at ? new Date(data.at).toLocaleString() : "-"}</b>
+          </div>
+          <div className="rc__meta-row">
+            <span>วิธีชำระเงิน</span>
+            <span className={methodCls}>{methodText}</span>
           </div>
         </div>
 
-        <div className="rcp__actions">
-          <a href="/" className="rcp__btn">กลับหน้าแรก</a>
-          <button className="rcp__btn ghost" onClick={() => window.print()}>พิมพ์</button>
+        {/* ตารางรายการ */}
+        <div className="rc__table">
+          <div className="rc__thead">
+            <span>รายการ</span>
+            <span>จำนวน</span>
+            <span>ราคา</span>
+          </div>
+
+          {data.items.map((i, idx) => (
+            <div className="rc__tr" key={idx}>
+              <span>{i.name}</span>
+              <span>{i.quantity}</span>
+              <span>{thb(Number(i.price) * Number(i.quantity))}</span>
+            </div>
+          ))}
+
+          <div className="rc__tfoot">
+            <span>ยอดรวม</span>
+            <span />
+            <b>{thb(data.total)}</b>
+          </div>
+        </div>
+
+        {/* ปุ่ม */}
+        <div className="rc__actions">
+          <a href="/wallet" className="btn-ghost">กลับ</a>
+          <button className="btn-primary" onClick={() => window.print()}>พิมพ์</button>
         </div>
       </div>
     </div>

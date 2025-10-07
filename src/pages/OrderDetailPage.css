@@ -21,3 +21,7 @@
   background-color: #e6b800;
   transform: translateY(0);
 }
+
+/* เสริมความสวยของหัวข้อและปุ่ม (อ้างอิงปุ่มธีมเดิมของคุณ) */
+.receipt-meta-row { display:flex; justify-content:space-between; color:#6b7280; }
+.list-group-item { background:#fff; }

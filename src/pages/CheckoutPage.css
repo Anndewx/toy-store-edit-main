@@ -1,30 +1,363 @@
-/* modal */
+/* ------------------- Modal ------------------- */
 .pay-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.6);
-  display: flex; align-items: center; justify-content: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 1050;
 }
+
 .pay-box {
-  background: #111; color: #fff;
-  border-radius: 16px; padding: 20px;
-  width: min(500px, 95%);
-  border: 2px solid #facc15; /* yellow */
+  background: #111;
+  color: #fff;
+  border-radius: 18px;
+  padding: 24px;
+  width: min(520px, 95%);
+  border: 2px solid #facc15;
+  box-shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+  max-height: 90vh;
+  overflow-y: auto;
 }
+
+.pay-box h4 {
+  margin-bottom: 14px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ------------------- วิธีชำระเงิน ------------------- */
 .pay-options {
-  display: grid; gap: 12px; margin-top: 15px;
+  display: grid;
+  gap: 12px;
+  margin-top: 10px;
+  margin-bottom: 20px;
 }
+
 .pay-card {
-  padding: 14px; border-radius: 12px;
-  background: #1f2937; cursor: pointer;
-  transition: 0.2s; text-align: center;
+  padding: 14px;
+  border-radius: 12px;
+  background: #1f2937;
+  cursor: pointer;
+  transition: 0.25s;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.pay-card:hover {
+  background: #374151;
+}
+
+.pay-card.active {
+  background: #facc15;
+  color: #111;
+  border-color: #facc15;
+}
+
+/* ------------------- ฟอร์มย่อย ------------------- */
+.pay-form {
+  display: grid;
+  gap: 12px;
+}
+
+.pay-form .form-label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.pay-form .form-control,
+.pay-form .form-select {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  transition: 0.2s;
+}
+
+.pay-form .form-control:focus,
+.pay-form .form-select:focus {
+  outline: none;
+  border-color: #facc15;
+  background: #111827;
+}
+
+.pay-form textarea.form-control {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* ------------------- PromptPay QR ------------------- */
+.pay__qr {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #0f172a;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #1e293b;
+}
+
+.pay__qr img {
+  width: 260px;
+  max-width: 100%;
+  border-radius: 10px;
+  display: block;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* ------------------- ปุ่ม ------------------- */
+.pay-box .btn {
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+.pay-box .btn-primary {
+  background: #facc15;
+  color: #111;
+  border: none;
+}
+
+.pay-box .btn-primary:hover {
+  background: #eab308;
+}
+
+.pay-box .btn-danger {
+  background: #dc2626;
+  border: none;
+}
+
+.pay-box .btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* ------------------- Scroll bar ใน modal ------------------- */
+.pay-box::-webkit-scrollbar {
+  width: 8px;
+}
+
+.pay-box::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 8px;
+}
+
+.pay-box::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+/* ------------------- Responsive ------------------- */
+@media (max-width: 480px) {
+  .pay-box {
+    padding: 18px;
+  }
+
+  .pay-card {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  .pay__qr img {
+    width: 200px;
+  }
+}
+
+/* ---------- ทำให้ตัวอักษรในฟอร์มชัดขึ้น ---------- */
+.pay-form .form-control,
+.pay-form .form-select {
+  background: #111827;           /* เข้มขึ้น */
+  border: 1px solid #475569;      /* เส้นขอบชัดขึ้น */
+  color: #e5e7eb;                 /* สีข้อความสว่างขึ้น */
+  caret-color: #facc15;           /* สีเคอร์เซอร์ */
+  border-radius: 10px;
+  padding: 10px 12px;             /* ใหญ่ขึ้นอ่านง่าย */
+  font-size: 15px;
+}
+
+.pay-form .form-control::placeholder {
+  color: #9ca3af;                 /* placeholder เทาอ่อน อ่านง่าย */
+  opacity: 1;
+}
+
+.pay-form .form-control:focus,
+.pay-form .form-select:focus {
+  outline: none;
+  border-color: #facc15;          /* เหลืองตามธีม */
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, .15);
+  background: #0f172a;            /* ยิ่งเข้มตอนโฟกัส */
+}
+
+.pay-form .form-label {
+  color: #e5e7eb;                 /* ป้ายหัวข้อสว่างขึ้น */
   font-weight: 600;
 }
-.pay-card:hover { background: #374151; }
-.pay-card.active { background: #facc15; color: #111; }
 
-/* receipt */
-.receipt-demo {
-  background: #fff; color: #111; padding: 20px; border-radius: 12px;
-  max-width: 600px; margin: 20px auto;
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+/* ---------- อ่านชัดแน่นอน (override) ---------- */
+.pay-form .form-control,
+.pay-form .form-select,
+.pay-form textarea.form-control {
+  background: #0b1220;           /* เข้มแบบน้ำเงิน ทำให้ตัวอักษรตัดชัด */
+  color: #f8fafc;                /* ขาวเกือบสนิท */
+  border: 2px solid #334155;     /* เส้นขอบเทา-น้ำเงินชัด แต่ไม่สว่างเกิน */
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 16px;               /* ใหญ่ขึ้น */
+  line-height: 1.35;
+  caret-color: #facc15;
+  transition: border-color .15s, box-shadow .15s, background .15s, color .15s;
 }
+
+/* placeholder ให้เห็นชัด */
+.pay-form .form-control::placeholder,
+.pay-form textarea.form-control::placeholder {
+  color: #cbd5e1;                /* เทาอ่อน อ่านเห็นแน่นอน */
+  opacity: 1;
+  letter-spacing: .1px;
+}
+
+/* โฟกัสแล้วตัดชัด ไม่แย่งซีนตัวอักษร */
+.pay-form .form-control:focus,
+.pay-form .form-select:focus,
+.pay-form textarea.form-control:focus {
+  outline: none;
+  border-color: #facc15;         /* เหลืองธีม */
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, .28);
+  background: #0a0f1a;           /* เข้มลงเล็กน้อย เพื่อ contrast เพิ่ม */
+  color: #ffffff;                /* ขาวสนิทตอนโฟกัส */
+}
+
+/* ป้ายหัวข้อฟอร์มให้สว่างขึ้น */
+.pay-form .form-label {
+  color: #e5e7eb;
+  font-weight: 700;
+}
+
+/* textarea สูงขึ้นนิด อ่านสบาย */
+.pay-form textarea.form-control {
+  min-height: 84px;
+}
+
+/* ปิดพื้นหลังเหลืองของ autofill บน Chrome */
+.pay-form .form-control:-webkit-autofill,
+.pay-form .form-control:-webkit-autofill:hover,
+.pay-form .form-control:-webkit-autofill:focus,
+.pay-form textarea.form-control:-webkit-autofill,
+.pay-form textarea.form-control:-webkit-autofill:hover,
+.pay-form textarea.form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc;
+  -webkit-box-shadow: 0 0 0px 1000px #0b1220 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ถ้ายังมีสไตล์อื่นมากลบ ให้บังคับด้วย !important เฉพาะสีตัวอักษร */
+.pay-form .form-control,
+.pay-form textarea.form-control { color: #f8fafc !important; }
+.pay-form .form-control::placeholder,
+.pay-form textarea.form-control::placeholder { color: #cbd5e1 !important; }
+
+/* ===================== PROMPTPAY QR ===================== */
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: #0f172a;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.qr-image {
+  width: 260px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.5);
+}
+
+.pay-title {
+  color: #e5e7eb;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========= อ่านชัด (input/select/textarea) ========= */
+.pay-form .form-control,
+.pay-form .form-select,
+.pay-form textarea.form-control {
+  background: #0b1220;
+  color: #f8fafc;
+  border: 2px solid #334155;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 16px;
+  line-height: 1.35;
+  caret-color: #facc15;
+  transition: border-color .15s, box-shadow .15s, background .15s, color .15s;
+}
+.pay-form .form-control::placeholder,
+.pay-form textarea.form-control::placeholder { color: #cbd5e1; opacity: 1; }
+.pay-form .form-control:focus,
+.pay-form .form-select:focus,
+.pay-form textarea.form-control:focus {
+  outline: none;
+  border-color: #facc15;
+  box-shadow: 0 0 0 2px rgba(250,204,21,.28);
+  background: #0a0f1a;
+  color: #ffffff;
+}
+.pay-form .form-label { color: #e5e7eb; font-weight: 700; }
+.pay-form textarea.form-control { min-height: 84px; }
+
+/* ปิดพื้นหลังเหลือง autofill Chrome */
+.pay-form .form-control:-webkit-autofill,
+.pay-form .form-control:-webkit-autofill:hover,
+.pay-form .form-control:-webkit-autofill:focus,
+.pay-form textarea.form-control:-webkit-autofill,
+.pay-form textarea.form-control:-webkit-autofill:hover,
+.pay-form textarea.form-control:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f8fafc;
+  -webkit-box-shadow: 0 0 0px 1000px #0b1220 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ========= PromptPay QR ========= */
+.pay__qr {
+  display:flex; justify-content:center; align-items:center;
+  background:#0f172a; padding:12px; border-radius:16px; border:1px solid #1e293b;
+}
+.pay__qr img { width:260px; max-width:100%; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+
+/* ========= โลโก้ธนาคารจริง (ออปชัน) ========= */
+.bank-logos {
+  display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap:10px; margin-bottom:12px;
+}
+.bank-option { display:flex; flex-direction:column; align-items:center;
+  background:#1f2937; padding:10px; border-radius:10px; border:2px solid transparent;
+  cursor:pointer; transition:.25s; text-align:center;
+}
+.bank-option:hover { background:#374151; }
+.bank-option.active { background:#facc15; border-color:#facc15; color:#111; }
+.bank-option input { display:none; }
+.bank-option img { width:40px; height:40px; object-fit:contain; margin-bottom:4px; }
+.bank-option span { font-size:14px; font-weight:500; white-space:nowrap; }
+
+/* ปุ่มคัดลอกเลขบัญชี */
+.copy-row { display:flex; gap:8px; align-items:center; }
+.copy-btn { white-space:nowrap; }

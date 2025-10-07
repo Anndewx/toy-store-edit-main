@@ -38,7 +38,7 @@ export default function CartDrawer() {
                 <div className="cd__grow">
                   <div className="cd__name">{i.name}</div>
                   <div className="cd__muted">
-                    ${Number(i.price).toFixed(2)} × {i.quantity}
+                    ฿{Number(i.price).toFixed(2)} × {i.quantity}
                   </div>
                 </div>
                 <div className="cd__qty">
@@ -54,7 +54,7 @@ export default function CartDrawer() {
 
         <footer className="cd__f">
           <div className="cd__sum">
-            <span>ยอดรวม</span><b>${subtotal.toFixed(2)}</b>
+            <span>ยอดรวม</span><b>฿{subtotal.toFixed(2)}</b>
           </div>
           <div className="cd__actions">
             <button className="ghost" onClick={clear}>ล้างตะกร้า</button>
