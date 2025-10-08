@@ -23,6 +23,12 @@ import AIFloatingRecommender from "./components/AIFloatingRecommender";
 // ✅ นำเข้าเพจนโยบายการจัดส่ง
 import ShippingPolicy from "./pages/ShippingPolicy";
 
+// ➕ (ใหม่) นำเข้าหน้าและ Route ของแอดมิน
+import AdminRoute from "./AdminRoute";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminOrdersPage from "./pages/admin/AdminOrdersPage";
+import AdminProductsPage from "./pages/admin/AdminProductsPage";
+
 export default function App() {
   return (
     <>
@@ -57,6 +63,20 @@ export default function App() {
 
         {/* ✅ เส้นทางนโยบายการจัดส่ง */}
         <Route path="/policies/shipping" element={<ShippingPolicy />} />
+
+        {/* ➕ เส้นทางแอดมิน (ใหม่) */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminOrdersPage />} />
+          <Route path="orders" element={<AdminOrdersPage />} />
+          <Route path="products" element={<AdminProductsPage />} />
+        </Route>
       </Routes>
 
       {/* Drawer สำหรับ Cart */}

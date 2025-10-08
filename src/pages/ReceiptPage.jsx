@@ -24,16 +24,31 @@ const paymentKey = (v) => {
 };
 const thb = (n) => `฿${Number(n || 0).toFixed(2)}`;
 
+/* === normalize ชื่อสถานะจาก backend ให้เข้ากับ OrderTracking.jsx === */
+const mapStatus = (s) => {
+  const k = String(s || "").toLowerCase();
+  if (k === "received" || k === "new" || k === "created") return "placed";
+  if (k === "packing" || k === "packed" || k === "processing") return "processing";
+  if (k === "shipped" || k === "shipping") return "shipping";
+  if (k === "complete" || k === "completed" || k === "delivered") return "delivered";
+  return k || "placed";
+};
+
+/* polling */
+const TERMINAL_STATES = new Set(["delivered", "completed", "cancelled"]);
+const REFRESH_MS = 10_000;
+
 export default function ReceiptPage() {
   const { search } = useLocation();
   const orderId = new URLSearchParams(search).get("order");
   const [data, setData] = useState(null);
 
+  /* โหลดครั้งแรก (กันแคช + normalize) */
   useEffect(() => {
     (async () => {
       try {
         if (!orderId) throw new Error("no id");
-        const json = await get(`/orders/${encodeURIComponent(orderId)}`); // { order, items }
+        const json = await get(`/orders/${encodeURIComponent(orderId)}?t=${Date.now()}`); // { order, items }
         const order = json.order || {};
         const items = Array.isArray(json.items) ? json.items : [];
 
@@ -46,7 +61,7 @@ export default function ReceiptPage() {
         setData({
           id: order.order_id,
           at: order.created_at,
-          status: order.status || "placed",
+          status: mapStatus(order.status || "placed"),
           method: methodRaw,
           items,
           total: Number(order.total_price || 0)
@@ -58,7 +73,7 @@ export default function ReceiptPage() {
             setData({
               id: last.order_id,
               at: last.at,
-              status: last.status || "placed",
+              status: mapStatus(last.status || "placed"),
               method: last.method,
               items: last.items || [],
               total: Number(last.total || 0),
@@ -68,6 +83,52 @@ export default function ReceiptPage() {
       }
     })();
   }, [orderId]);
+
+  /* polling ทุก 10 วิ (กันแคช + normalize) */
+  useEffect(() => {
+    if (!data?.id) return;
+
+    let alive = true;
+    let timerId = null;
+
+    const tick = async () => {
+      try {
+        const curStatus = String(data.status || "").toLowerCase();
+        if (TERMINAL_STATES.has(curStatus)) return;
+
+        const json = await get(`/orders/${encodeURIComponent(data.id)}?t=${Date.now()}`);
+        const order = json.order || {};
+        const items = Array.isArray(json.items) ? json.items : [];
+
+        if (!alive) return;
+
+        setData((prev) => ({
+          ...(prev || {}),
+          id: order.order_id ?? prev?.id,
+          at: order.created_at ?? prev?.at,
+          status: mapStatus(order.status || prev?.status || "placed"),
+          method: (order.payment_method ?? prev?.method),
+          items,
+          total: Number(order.total_price ?? order.total ?? prev?.total ?? 0),
+        }));
+
+        const nextStatusStr = mapStatus(order.status || "");
+        if (TERMINAL_STATES.has(nextStatusStr) && timerId) {
+          clearInterval(timerId);
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    tick();
+    timerId = setInterval(tick, REFRESH_MS);
+
+    return () => {
+      alive = false;
+      if (timerId) clearInterval(timerId);
+    };
+  }, [data?.id]); // ไม่ต้องใส่ data.status เพื่อไม่ให้รีเซ็ต interval บ่อย
 
   if (!data) return <div className="container py-4">กำลังโหลด...</div>;
 
@@ -81,13 +142,11 @@ export default function ReceiptPage() {
       </div>
 
       <div className="rc__card">
-        {/* หัวการ์ด */}
         <div className="rc__head">
           <h2 className="rc__title">ใบเสร็จรับเงิน</h2>
           <div className="rc__id">#{data.id}</div>
         </div>
 
-        {/* meta */}
         <div className="rc__meta">
           <div className="rc__meta-row">
             <span>วันที่</span>
@@ -99,7 +158,6 @@ export default function ReceiptPage() {
           </div>
         </div>
 
-        {/* ตารางรายการ */}
         <div className="rc__table">
           <div className="rc__thead">
             <span>รายการ</span>
@@ -107,7 +165,7 @@ export default function ReceiptPage() {
             <span>ราคา</span>
           </div>
 
-          {data.items.map((i, idx) => (
+        {data.items.map((i, idx) => (
             <div className="rc__tr" key={idx}>
               <span>{i.name}</span>
               <span>{i.quantity}</span>
@@ -122,7 +180,6 @@ export default function ReceiptPage() {
           </div>
         </div>
 
-        {/* ปุ่ม */}
         <div className="rc__actions">
           <a href="/wallet" className="btn-ghost">กลับ</a>
           <button className="btn-primary" onClick={() => window.print()}>พิมพ์</button>

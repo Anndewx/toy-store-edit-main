@@ -42,6 +42,8 @@ export const get   = (p, o)        => http("GET", p, undefined, o);
 export const post  = (p, b, o)     => http("POST", p, b, o);
 export const patch = (p, b, o)     => http("PATCH", p, b, o);
 export const del   = (p, o)        => http("DELETE", p, undefined, o);
+// ➕ เพิ่มสำหรับแอดมินที่ใช้ PUT
+export const put   = (p, b, o)     => http("PUT", p, b, o);
 
 // =====================================================================
 // Products
@@ -116,3 +118,23 @@ export async function listOrdersMerged() {
   } catch (_) {}
   return [...demo, ...remote];
 }
+
+// =====================================================================
+// ➕ Admin helpers (ใหม่): /api/me และชุดคำสั่งแอดมิน
+// =====================================================================
+export const getMe                 = (options)               => get(`/me`, options);
+
+// Orders (admin)
+export const adminListOrders       = (params = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return get(`/admin/orders${q ? `?${q}` : ""}`);
+};
+export const adminSetOrderStatus   = (orderId, body)        => put(`/admin/orders/${orderId}/status`, body);
+
+// Products (admin)
+export const adminListProducts     = (params = {}) => {
+  const q = new URLSearchParams(params).toString();
+  return get(`/admin/products${q ? `?${q}` : ""}`);
+};
+export const adminUpdateStock      = (productId, type, value) =>
+  put(`/admin/products/${productId}/stock`, { type, value: Number(value) || 0 });

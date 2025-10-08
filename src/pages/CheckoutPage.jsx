@@ -207,7 +207,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ─── PromptPay ─── */}
+            {/* ─── QR code ─── */}
             {paymentMethod === "other" && (
               <div className="pay-form mt-3">
                 <label className="form-label">สแกน QR เพื่อชำระเงิน</label>
