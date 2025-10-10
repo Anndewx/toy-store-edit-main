@@ -1,38 +1,33 @@
-// src/components/CategoryRow.jsx
-import React from "react";
-import "../styles/ai.css";
+import React, { useState } from "react";
 
-/**
- * ใช้ key ให้ตรงกับ category_slug ในฐานข้อมูลจริง
- * จากตารางของคุณมี: gundam, superhero, anime, game
- */
-const CATS = [
-  { key: "superhero", label: "ซูเปอร์ฮีโร่", icon: "🦸‍♂️" },
-  { key: "game",      label: "เกม",        icon: "🎮" },
-  { key: "anime",     label: "อนิเมะ",     icon: "✨" },
-  { key: "gundam",    label: "หุ่นยนต์",    icon: "🤖" }, // หุ่นยนต์ = หมวด gundam
+const categories = [
+  
 ];
 
 export default function CategoryRow() {
-  const handlePick = (cat) => {
-    // ส่ง event ให้ AISearchSection ไปยิง /api/products/search แทนการเปลี่ยนหน้า
-    const payload = { q: cat.key, popular: 1, limit: 8 };
-    window.dispatchEvent(new CustomEvent("ai:quickSearch", { detail: payload }));
-  };
+  const [active, setActive] = useState("hero");
 
   return (
-    <div className="cat-row centered">
-      {CATS.map((c) => (
-        <button
-          key={c.key}
-          className="cat-pill"
-          onClick={() => handlePick(c)}
-          title={c.label}
-        >
-          <span className="cat-ic">{c.icon}</span>
-          <span className="cat-txt">{c.label}</span>
-        </button>
-      ))}
+    <div className="flex items-center justify-center min-h-[80vh]">
+      <div className="flex flex-wrap justify-center gap-6">
+        {categories.map((cat) => {
+          const isActive = active === cat.key;
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setActive(cat.key)}
+              className={[
+                "px-8 py-3 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg border",
+                isActive
+                  ? "bg-white text-black border-white scale-105"
+                  : "bg-transparent text-white border-white/30 hover:bg-white/10 hover:scale-105",
+              ].join(" ")}
+            >
+              {cat.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-// server.js — อิงไฟล์เดิมของคุณ 100% + เพิ่ม dev route + /api/me + ปรับ CSP ให้เชื่อมต่อได้
-
 import 'dotenv/config';
 import bcrypt from 'bcrypt';
 import cors from 'cors';
@@ -24,17 +22,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'toy_store_secret';
 const isProd = process.env.NODE_ENV === 'production';
 
 // ---------------- CORS (dev/prod) ----------------
-const allowedOrigins = new Set(
-  [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL,  // e.g. https://xxxx.ngrok-free.app
-    process.env.FRONTEND_URL2, // เผื่อมีอีกอัน
-  ].filter(Boolean)
-);
-
-const ngrokRegex = /^https?:\/\/[a-z0-9-]+\.ngrok(-free)?\.app$/i;
-
-// ...
 app.use(
   cors({
     origin(origin, cb) {
@@ -47,27 +34,16 @@ app.use(
       cb(null, ok);
     },
     credentials: true,
-    // 👇 สำคัญ: อนุญาต Authorization header
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     optionsSuccessStatus: 204,
   })
 );
 
-// ตอบพรีไฟลท์ทุกเส้นทาง
-app.options(
-  '*',
-  cors({
-    origin: true,
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    optionsSuccessStatus: 204,
-  })
-);
+// ตอบ preflight
+app.options('*', cors({ origin: true, credentials: true }));
 
-// ---------------- Helmet ----------------
-// dev ปิด CSP, prod กำหนด connectSrc ชัดเจน
+// ---------------- Helmet (ผ่อน CSP ใน dev) ----------------
 app.use(
   helmet(
     isProd
@@ -75,24 +51,42 @@ app.use(
           contentSecurityPolicy: {
             useDefaults: true,
             directives: {
-              connectSrc: ["'self'", 'http://localhost:3000', 'http://localhost:3001', 'ws://localhost:3000', 'ws://localhost:3001'],
-              imgSrc: ["'self'", 'data:'],
+              // อนุญาต fetch/ws ไปหน้าเว็บและ API
+              connectSrc: [
+                "'self'",
+                'http://localhost:3000',
+                'http://localhost:3001',
+                'ws://localhost:3000',
+                'ws://localhost:3001',
+              ],
+              imgSrc: ["'self'", 'data:', 'blob:'],
               scriptSrc: ["'self'", "'unsafe-inline'"],
               styleSrc: ["'self'", "'unsafe-inline'"],
+              defaultSrc: ["'self'"],
             },
           },
           crossOriginResourcePolicy: { policy: 'cross-origin' },
         }
-      : { contentSecurityPolicy: false, crossOriginResourcePolicy: { policy: 'cross-origin' } }
+      : {
+          // ปิด CSP ใน dev เพื่อกัน error devtools/cdp
+          contentSecurityPolicy: false,
+          crossOriginResourcePolicy: { policy: 'cross-origin' },
+        }
   )
 );
 
 app.use(express.json());
 
-// ---------------- Static images ----------------
+// ---------------- Static files ----------------
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// ✅ เสิร์ฟทั้งโฟลเดอร์ public (ครอบ /images /banners และไฟล์อื่น)
+app.use(express.static(path.resolve(__dirname, '..', 'public')));
+
+// ✅ คงเส้นทางเดิมไว้ด้วย (ไม่จำเป็นแต่เผื่อโค้ดที่พึ่งพา)
 app.use('/images', express.static(path.resolve(__dirname, '..', 'public', 'images')));
+app.use('/banners', express.static(path.resolve(__dirname, '..', 'public', 'banners')));
 
 // ---------------- Health ----------------
 app.get('/api/health', async (_req, res) => {
@@ -104,7 +98,7 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-// ---------------- Products (คงแบบเดิม) ----------------
+// ---------------- Products base SELECT ----------------
 const SELECT_PRODUCTS = `
   SELECT
     p.product_id,
@@ -128,6 +122,30 @@ const SELECT_PRODUCTS = `
   ) inv ON inv.product_id = p.product_id
 `;
 
+// ---------------- Banners ----------------
+app.get('/api/banners', async (req, res) => {
+  try {
+    const now = new Date();
+    const [rows] = await pool.query(
+      `
+      SELECT id, title, image_url, link_type, link_value
+      FROM banners
+      WHERE active=1
+        AND (starts_at IS NULL OR starts_at <= ?)
+        AND (ends_at   IS NULL OR ends_at   >= ?)
+      ORDER BY sort_order ASC, id DESC
+      LIMIT 12
+    `,
+      [now, now]
+    );
+    res.json(rows);
+  } catch (e) {
+    console.error('GET /api/banners error:', e.message);
+    res.status(500).json({ error: 'banners_failed' });
+  }
+});
+
+// ---------------- Products list ----------------
 app.get('/api/products', async (_req, res) => {
   try {
     const [rows] = await pool.query(`${SELECT_PRODUCTS} ORDER BY p.product_id ASC`);
@@ -149,22 +167,10 @@ app.get('/api/products/new', async (req, res) => {
   }
 });
 
-app.get('/api/products/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const [[row]] = await pool.query(`${SELECT_PRODUCTS} HAVING p.product_id = ?`, [id]);
-  if (!row) return res.status(404).json({ error: 'Product not found' });
-    res.json(row);
-  } catch (e) {
-    console.error('GET /api/products/:id error:', e.code || e.message);
-    res.status(500).json({ error: 'Failed to fetch product' });
-  }
-});
-
-// --------- Product Search (เดิม) ---------
+// ---------------- Products search (LITE / stable) ----------------
 app.get('/api/products/search', async (req, res) => {
   try {
-    const { q = "", maxPrice, onSale, popular, newest, limit = 12 } = req.query;
+    const { q = '', maxPrice, onSale, popular, newest, limit = 12, category } = req.query;
 
     const params = [];
     let sql = `
@@ -173,61 +179,64 @@ app.get('/api/products/search', async (req, res) => {
         p.name,
         p.price,
         COALESCE(NULLIF(p.image,''), p.image_url) AS image,
-        p.original_price,
         p.on_sale,
         p.category_slug,
-        p.created_at,
-        ROUND(
-          IFNULL(
-            (NULLIF(p.original_price,0) - p.price) / NULLIF(p.original_price,0) * 100
-          , 0)
-        ) AS discount_percent,
-        IFNULL(SUM(CASE WHEN o.status = 'completed' THEN od.quantity ELSE 0 END), 0) AS sold_qty
+        p.created_at
       FROM products p
-      LEFT JOIN order_details od ON od.product_id = p.product_id
-      LEFT JOIN orders o ON o.order_id = od.order_id
       WHERE 1=1
     `;
 
-    if (q) { sql += ` AND (p.name LIKE ? OR p.category_slug LIKE ?)`; params.push(`%${q}%`, `%${q}%`); }
+    if (q) {
+      sql += ` AND (p.name LIKE ? OR p.category_slug LIKE ?)`;
+      params.push(`%${q}%`, `%${q}%`);
+    }
+    if (category) {
+      sql += ` AND p.category_slug = ?`;
+      params.push(category);
+    }
     if (maxPrice) { sql += ` AND p.price <= ?`; params.push(Number(maxPrice)); }
     if (onSale)   { sql += ` AND p.on_sale = 1`; }
 
-    sql += `
-      GROUP BY p.product_id, p.name, p.price, image, p.image_url,
-               p.original_price, p.on_sale, p.category_slug, p.created_at
-    `;
-
+    // order
     let orderBy = `p.created_at DESC`;
-    if (popular) orderBy = `sold_qty DESC, discount_percent DESC, p.created_at DESC`;
+    if (popular) orderBy = `p.created_at DESC`;
     if (newest)  orderBy = `p.created_at DESC`;
 
     sql += ` ORDER BY ${orderBy} LIMIT ?`;
     params.push(Math.min(Number(limit) || 12, 100));
 
     const [rows] = await pool.query(sql, params);
-
     res.json(
-      rows.map(r => ({
+      rows.map((r) => ({
         product_id: r.product_id,
         name: r.name,
         price: r.price,
         image: r.image,
-        original_price: r.original_price,
+        image_url: r.image,
         on_sale: r.on_sale,
         category_slug: r.category_slug,
         created_at: r.created_at,
-        discount: r.discount_percent,
-        sold_qty: r.sold_qty,
       }))
     );
   } catch (e) {
-    console.error('GET /api/products/search error:', e.code || e.message);
+    console.error('GET /api/products/search error:', e);
     res.status(500).json({ error: 'product_search_failed' });
   }
 });
 
-// --------- AI Recommendations (เดิม) ---------
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const [[row]] = await pool.query(`${SELECT_PRODUCTS} HAVING p.product_id = ?`, [id]);
+    if (!row) return res.status(404).json({ error: 'Product not found' });
+    res.json(row);
+  } catch (e) {
+    console.error('GET /api/products/:id error:', e.code || e.message);
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// --------- AI Recommendations ---------
 app.get('/api/ai/recommendations', async (req, res) => {
   try {
     const { tag, maxPrice, onSale, popular, newest, limit = 12 } = req.query;
@@ -268,7 +277,7 @@ app.get('/api/ai/recommendations', async (req, res) => {
     const [rows] = await pool.query(sql, params);
 
     res.json(
-      rows.map(r => ({
+      rows.map((r) => ({
         product_id: r.product_id,
         name: r.name,
         price: r.price,
@@ -287,7 +296,7 @@ app.get('/api/ai/recommendations', async (req, res) => {
   }
 });
 
-// ---------------- Auth guard ----------------
+// ---------------- Auth & Admin ----------------
 function requireAuth(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
@@ -300,19 +309,15 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 }
-
-// ---------------- Mount routes ----------------
 app.use('/api/cart', requireAuth, cartRoutes);
 app.use('/api/orders', requireAuth, ordersRoutes);
 app.use('/api/addresses', addressesRoutes);
 app.use('/api', authRoutes);
-
-// ✅ Admin routes (ต้องผ่าน requireAuth + requireAdmin)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 app.use('/api/admin/orders', requireAuth, requireAdmin, adminOrders);
 app.use('/api/admin/products', requireAuth, requireAdmin, adminProducts);
 
-// ---------------- DEV route (ทดสอบเท่านั้น) ----------------
-// ใช้เช็ก user+role จากอีเมลได้เร็ว ๆ โดยไม่ต้องมี token
+// ---------------- DEV + /api/me ----------------
 app.get('/api/dev/user/:email', async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -327,7 +332,6 @@ app.get('/api/dev/user/:email', async (req, res) => {
   }
 });
 
-// ✅ ตรวจ token เพื่อเช็ก user role (ใช้สำหรับหน้า /admin)
 app.get('/api/me', (req, res) => {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -340,40 +344,30 @@ app.get('/api/me', (req, res) => {
       'SELECT user_id, email, role FROM users WHERE user_id = ? LIMIT 1',
       [decoded.id],
       (err, results) => {
-        if (err) {
-          console.error(err);
-          return res.status(500).json({ error: 'Server error' });
-        }
+        if (err) return res.status(500).json({ error: 'Server error' });
         if (!results || results.length === 0) return res.status(404).json({ error: 'User not found' });
         res.json(results[0]);
       }
     );
-  } catch (e) {
+  } catch {
     return res.status(401).json({ message: 'Invalid token' });
   }
 });
 
-// ---------------- Error handler ----------------
+// ---------------- Error handler + Start ----------------
 app.use((err, _req, res, _next) => {
   console.error('UNCAUGHT ERROR:', err);
   res.status(500).json({ error: 'internal error' });
 });
 
-// ---------------- Start Server ----------------
 const PORT = Number(process.env.PORT) || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
-
 const server = app.listen(PORT, HOST, () => {
   console.log(`API running on http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
 });
-
 server.on('error', (err) => {
   if (err?.code === 'EADDRINUSE') {
-    console.error(`\n❌ Port ${PORT} is already in use.`);
-    console.error('👉 แก้ชั่วคราว: ใช้พอร์ตอื่นเช่น 3002');
-    console.error('   Windows (CMD):   set PORT=3002 && npm run dev');
-    console.error('   PowerShell:      $env:PORT=3002; npm run dev');
-    console.error('   Linux/macOS:     PORT=3002 npm run dev\n');
+    console.error(`Port ${PORT} in use`);
     process.exit(1);
   } else {
     console.error(err);

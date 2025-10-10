@@ -53,6 +53,12 @@ export const fetchProduct      = (id, options)          => get(`/products/${id}`
 export const searchProducts    = (q = "", options)      => get(`/products/search?q=${encodeURIComponent(q)}`, options);
 export const fetchNewProducts  = (limit = 12, options)  => get(`/products/new?limit=${limit}`, options);
 
+// ✅ NEW: แนะนำ/ค้นหาแบบฉลาด (ยิงไปที่ /api/recommend)
+export async function fetchRecommend({ q = "", limit = 12 } = {}) {
+  const qs = new URLSearchParams({ q, limit });
+  return get(`/recommend?${qs.toString()}`);
+}
+
 // =====================================================================
 // Cart
 // =====================================================================
