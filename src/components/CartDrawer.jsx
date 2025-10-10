@@ -15,35 +15,49 @@ function resolveImageSrc(obj) {
   const onlyFile = /^[^/\\]+\.[a-z0-9]{2,5}$/i.test(raw);
   if (onlyFile) return `${API_BASE}/images/${raw}`;
   if (raw.startsWith("/images")) return `${API_BASE}${raw}`;
-  if (raw.startsWith("images"))  return `${API_BASE}/${raw}`;
-  if (raw.startsWith("/"))       return `${API_BASE}${raw}`;
+  if (raw.startsWith("images")) return `${API_BASE}/${raw}`;
+  if (raw.startsWith("/")) return `${API_BASE}${raw}`;
   return `${API_BASE}/${raw}`;
 }
 
 export default function CartDrawer() {
   const { items, subtotal, remove, updateQty, clear } = useCart();
   const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
 
+  // เปิดตะกร้า
   useEffect(() => {
-    const openFn = () => setOpen(true);
+    const openFn = () => {
+      setVisible(true);
+      setTimeout(() => setOpen(true), 10);
+    };
     window.addEventListener("open-cart", openFn);
     return () => window.removeEventListener("open-cart", openFn);
   }, []);
 
+  // ปิดด้วย ESC
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    const onKey = (e) => e.key === "Escape" && handleClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!open) return null;
+  function handleClose() {
+    setOpen(false);
+    setTimeout(() => setVisible(false), 350); // ให้รอ animation จบก่อนซ่อน
+  }
+
+  if (!visible) return null;
 
   return (
-    <div className="cd__overlay" onClick={() => setOpen(false)}>
-      <aside className="cd" onClick={(e) => e.stopPropagation()}>
+    <div className={`cd__overlay ${open ? "fade-in" : "fade-out"}`} onClick={handleClose}>
+      <aside
+        className={`cd ${open ? "cd--show" : "cd--hide"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="cd__h">
           <b>ตะกร้าสินค้า</b>
-          <button className="cd__close" onClick={() => setOpen(false)}>✕</button>
+          <button className="cd__close" onClick={handleClose}>✕</button>
         </header>
 
         <div className="cd__b">
@@ -56,7 +70,10 @@ export default function CartDrawer() {
                   className="cd__thumb"
                   src={resolveImageSrc(i)}
                   alt={i.name}
-                  onError={(e)=>{e.currentTarget.onerror=null; e.currentTarget.src="/images/placeholder.jpg";}}
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = "/images/placeholder.jpg";
+                  }}
                 />
                 <div className="cd__grow">
                   <div className="cd__name">{i.name}</div>
@@ -65,11 +82,23 @@ export default function CartDrawer() {
                   </div>
                 </div>
                 <div className="cd__qty">
-                  <button onClick={() => updateQty(i.product_id, Math.max(1, i.quantity - 1))}>−</button>
+                  <button
+                    onClick={() =>
+                      updateQty(i.product_id, Math.max(1, i.quantity - 1))
+                    }
+                  >
+                    −
+                  </button>
                   <span>{i.quantity}</span>
-                  <button onClick={() => updateQty(i.product_id, i.quantity + 1)}>＋</button>
+                  <button
+                    onClick={() => updateQty(i.product_id, i.quantity + 1)}
+                  >
+                    ＋
+                  </button>
                 </div>
-                <button className="cd__link" onClick={() => remove(i.product_id)}>ลบ</button>
+                <button className="cd__link" onClick={() => remove(i.product_id)}>
+                  ลบ
+                </button>
               </div>
             ))
           )}
@@ -77,11 +106,16 @@ export default function CartDrawer() {
 
         <footer className="cd__f">
           <div className="cd__sum">
-            <span>ยอดรวม</span><b>฿{subtotal.toFixed(2)}</b>
+            <span>ยอดรวม</span>
+            <b>฿{subtotal.toFixed(2)}</b>
           </div>
           <div className="cd__actions">
-            <button className="ghost" onClick={clear}>ล้างตะกร้า</button>
-            <a className="primary" href="/checkout">ชำระเงิน</a>
+            <button className="ghost" onClick={clear}>
+              ล้างตะกร้า
+            </button>
+            <a className="primary" href="/checkout">
+              ชำระเงิน
+            </a>
           </div>
         </footer>
       </aside>

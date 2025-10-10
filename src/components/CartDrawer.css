@@ -16,3 +16,216 @@
 .cd__actions{display:flex;gap:10px}
 .cd__actions .ghost{flex:1;height:40px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer}
 .cd__actions .primary{flex:1;height:40px;border-radius:10px;background:#16a34a;color:#fff;text-decoration:none;display:grid;place-items:center;font-weight:800}
+
+/* ==== Overlay (พื้นหลังจาง) ==== */
+.cd__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 80;
+}
+
+/* ==== Drawer หลัก ==== */
+.cd {
+  width: min(420px, 100%);
+  background: linear-gradient(180deg, #1f2937, #111827);
+  color: #f9fafb;
+  height: 100%;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.45);
+  border-left: 1px solid rgba(250, 204, 21, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.35s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ==== Header ==== */
+.cd__h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(31, 41, 55, 0.9);
+  backdrop-filter: blur(8px);
+}
+.cd__h b {
+  font-size: 18px;
+  font-weight: 700;
+}
+.cd__close {
+  border: none;
+  background: transparent;
+  color: #f9fafb;
+  font-size: 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.cd__close:hover {
+  color: #facc15;
+}
+
+/* ==== เนื้อหาภายใน ==== */
+.cd__b {
+  flex: 1;
+  padding: 10px 16px;
+  overflow-y: auto;
+}
+.cd__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.2s;
+}
+.cd__row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+.cd__thumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.cd__grow {
+  flex: 1;
+}
+.cd__name {
+  font-weight: 600;
+  font-size: 15px;
+}
+.cd__muted {
+  color: #9ca3af;
+  font-size: 13px;
+}
+.cd__qty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cd__qty button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: #facc15;
+  color: #111;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.cd__qty button:hover {
+  background: #eab308;
+}
+.cd__link {
+  border: 0;
+  background: transparent;
+  color: #ef4444;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* ==== Footer ==== */
+.cd__f {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 14px 16px;
+  background: rgba(17, 24, 39, 0.9);
+  backdrop-filter: blur(6px);
+}
+.cd__sum {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 16px;
+}
+.cd__actions {
+  display: flex;
+  gap: 10px;
+}
+.cd__actions .ghost {
+  flex: 1;
+  height: 42px;
+  border: 1px solid #facc15;
+  border-radius: 10px;
+  background: transparent;
+  color: #facc15;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.25s;
+}
+.cd__actions .ghost:hover {
+  background: #facc15;
+  color: #111;
+}
+.cd__actions .primary {
+  flex: 1;
+  height: 42px;
+  border-radius: 10px;
+  background: #facc15;
+  color: #111;
+  text-decoration: none;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  transition: 0.25s;
+}
+.cd__actions .primary:hover {
+  background: #eab308;
+}
+
+/* ==== Scrollbar ==== */
+.cd__b::-webkit-scrollbar {
+  width: 8px;
+}
+.cd__b::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+.cd__b::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ==== Drawer Animation ==== */
+.cd {
+  transform: translateX(100%);
+  opacity: 0;
+  transition: transform 0.4s ease, opacity 0.35s ease;
+}
+.cd--show {
+  transform: translateX(0);
+  opacity: 1;
+}
+.cd--hide {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+/* ==== Overlay Fade ==== */
+.cd__overlay {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.cd__overlay.fade-in {
+  opacity: 1;
+}
+.cd__overlay.fade-out {
+  opacity: 0;
+}

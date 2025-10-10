@@ -164,7 +164,7 @@ export default function AISearchSection() {
                 placeholder="ค้นหา: gundam"
               />
             </form>
-            <button className="sBtn" onClick={handleSearch}>AI Suggest</button>
+            <button className="sBtn" onClick={handleSearch}>Search</button>
           </div>
 
           <ProductsRow title={title} loading={loading} items={items} onAdd={handleAdd} />

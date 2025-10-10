@@ -1,0 +1,349 @@
+/* ===== Layout คงเดิม ปรับ alignment ให้เป๊ะ ===== */
+.wallet-container {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.wallet-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+/* list เป็น column เหมือนเดิม */
+.wallet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* การ์ด: เปลี่ยนเป็น grid 2 คอลัมน์ (ซ้าย:ข้อมูล, ขวา:ราคา+ปุ่ม) */
+.wallet-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.wallet-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.08);
+  border-color: #d1d5db;
+}
+.wallet-card.highlight {
+  box-shadow: 0 0 0 3px rgba(250,204,21,.25), 0 6px 20px rgba(0,0,0,.08);
+}
+
+/* ฝั่งซ้าย */
+.wallet-info h4 {
+  margin: 0 0 2px 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.35;
+}
+.wallet-date {
+  color: #6b7280;
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+.wallet-payment {
+  font-size: 0.9rem;
+  color: #374151;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* ฝั่งขวา: ราคา + ปุ่ม — จัดแนวให้ตรง */
+.wallet-actions {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ให้คอลัมน์ราคากว้างคงที่ และชิดขวาเสมอ */
+.wallet-price {
+  min-width: 112px;       /* ให้กว้างพอสำหรับตัวเลข 6–8 หลัก */
+  text-align: right;
+  font-weight: 800;
+  font-size: 1rem;
+  color: #111827;
+  /* ตัวเลขอยู่คอลัมน์เดียวกันแบบเครื่องคิดเลข */
+  font-variant-numeric: tabular-nums;
+  -moz-font-feature-settings: "tnum" 1;
+  -webkit-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ปุ่มเดิม ปรับให้คมขึ้น */
+.btn {
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: .15s ease;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.btn-view {
+  border-color: #111827;
+  color: #111827;
+  background: #fff;
+}
+.btn-view:hover {
+  background: #111827;
+  color: #fff;
+}
+.btn-delete {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+}
+.btn-delete:hover {
+  background: #dc2626;
+}
+
+.wallet-empty {
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 26px;
+  border-radius: 12px;
+}
+
+/* ===== Wallet – จัดคอลัมน์ให้อ่านง่ายโดยไม่เปลี่ยน JSX ===== */
+.wallet-page {
+  --col-price: 120px;  /* ความกว้างคอลัมน์ราคา */
+  --gap: 12px;
+}
+
+.wallet-page h3,
+.wallet-title {
+  font-weight: 800;
+  letter-spacing: .2px;
+  margin-bottom: 18px;
+  color: #0f172a;
+}
+
+/* ให้ li แต่ละใบเป็นการ์ดเหมือนเดิม แต่ใช้ grid จัด 2 คอลัมน์ */
+.wallet-page .list-group {
+  margin: 0; padding: 0;
+}
+.wallet-page .list-group-item {
+  display: grid !important;              /* แทน d-flex ของเดิม */
+  grid-template-columns: 1fr auto;       /* ซ้าย:รายละเอียด / ขวา:ราคา+ปุ่ม */
+  align-items: center;
+  gap: var(--gap);
+  border-radius: 14px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #fff;
+  padding: 16px 18px !important;
+  margin-bottom: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.05);
+  transition: box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+}
+.wallet-page .list-group-item:hover {
+  transform: translateY(-1px);
+  border-color: #d1d5db !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+/* กรณีมี inline highlight เดิม ให้ดูเด่นแต่ไม่รก */
+.wallet-page .list-group-item[style*="box-shadow"] {
+  box-shadow:
+    0 0 0 3px rgba(250,204,21,.25),
+    0 8px 24px rgba(0,0,0,.08) !important;
+}
+
+/* ฝั่งซ้าย: ยึดลำดับตัวอักษรให้เป็นระเบียบ */
+.wallet-page .list-group-item .fw-semibold {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+.wallet-page .list-group-item .text-muted {
+  color: #6b7280 !important;
+  font-size: .88rem;
+  line-height: 1.3;
+}
+.wallet-page .list-group-item > div > div:nth-child(3) { /* แถว "วิธีชำระเงิน" */
+  font-size: .92rem;
+  color: #374151;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+/* ฝั่งขวา: ราคา + ปุ่ม -> จัดเป็น grid คงที่ 3 คอลัมน์ */
+.wallet-page .list-group-item > .d-flex {
+  justify-self: end;
+  display: grid !important;
+  grid-template-columns: var(--col-price) 110px 72px; /* ราคา / รายละเอียด / ลบ */
+  align-items: center;
+  gap: 10px;
+}
+
+/* ราคาให้ชิดขวาเสมอ และใช้ตัวเลขแบบ tabular ให้ตรงคอลัมน์ */
+.wallet-page .list-group-item > .d-flex > strong {
+  display: block;
+  text-align: right;
+  font-weight: 900;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum" 1;
+  -moz-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ปุ่ม (ยังใช้คลาสเดิม) — ทำให้สูงเท่ากันและอ่านชัด */
+.wallet-page .btn.btn-sm {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  line-height: 36px; /* จัด baseline ให้กลาง */
+  border-width: 1.5px;
+}
+.wallet-page .btn.btn-sm.btn-outline-dark:hover {
+  background: #111827; color: #fff;
+}
+.wallet-page .btn.btn-sm.btn-outline-danger:hover {
+  background: #ef4444; color: #fff;
+}
+
+/* โมบาย: ซ้อนเป็น 2 แถว แต่ยังคง alignment ของราคา */
+@media (max-width: 640px) {
+  .wallet-page .list-group-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .wallet-page .list-group-item > .d-flex {
+    grid-template-columns: 1fr 1fr;     /* ราคา / ปุ่ม (รวม) */
+    grid-template-areas:
+      "price price"
+      "detail delete";
+    justify-items: stretch;
+  }
+  .wallet-page .list-group-item > .d-flex > strong { grid-area: price; text-align: right; }
+  .wallet-page .list-group-item > .d-flex > a { grid-area: detail; }
+  .wallet-page .list-group-item > .d-flex > button { grid-area: delete; }
+}
+
+.wallet-page h2 {
+  text-align: center;
+  font-weight: 800;
+  margin-bottom: 24px;
+  color: #0f172a;
+}
+
+.wallet-page .list-group-item {
+  display: grid !important;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 14px !important;
+  padding: 16px 18px !important;
+  margin-bottom: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+.wallet-page .list-group-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+}
+.wallet-page .list-group-item.highlight {
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.25),
+    0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* ข้อมูลฝั่งซ้าย */
+.wallet-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+.wallet-info .fw-semibold {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+.wallet-info .text-muted {
+  color: #6b7280 !important;
+  font-size: 0.86rem;
+}
+.wallet-info .wallet-payment {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+/* ฝั่งขวา (ราคา + ปุ่ม) */
+.wallet-right {
+  display: grid !important;
+  grid-template-columns: 100px 100px 70px;
+  align-items: center;
+  justify-content: end;
+  gap: 10px;
+}
+.wallet-right strong {
+  text-align: right;
+  font-weight: 900;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-feature-settings: "tnum" 1;
+  -moz-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ปุ่ม */
+.wallet-page .btn.btn-sm {
+  border-radius: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  height: 36px;
+  line-height: 1;
+  transition: 0.2s;
+}
+.wallet-page .btn.btn-sm.btn-outline-dark:hover {
+  background: #111827;
+  color: #fff;
+}
+.wallet-page .btn.btn-sm.btn-outline-danger:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* กล่องว่าง */
+.wallet-empty {
+  text-align: center;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 30px;
+  border-radius: 12px;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .wallet-page .list-group-item {
+    grid-template-columns: 1fr;
+  }
+  .wallet-right {
+    grid-template-columns: 1fr 1fr;
+    justify-content: stretch;
+  }
+  .wallet-right strong {
+    text-align: left;
+  }
+}

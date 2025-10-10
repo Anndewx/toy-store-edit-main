@@ -45,7 +45,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="container-narrow" style={{ paddingTop: 24 }}>
-      {/* Breadcrumb (ไม่ใช้ Hook) */}
+      {/* Breadcrumb */}
       <nav className="pd__breadcrumb" aria-label="breadcrumb">
         <Link to="/">Home</Link>
         {" / "}
@@ -96,7 +96,7 @@ export default function ProductDetailPage() {
             <button aria-label="เพิ่มจำนวน" onClick={() => setQty(q => Math.min(stock || 99, q + 1))}>＋</button>
           </div>
 
-          {/* CTA หลัก + แชร์ */}
+          {/* CTA + แชร์ */}
           <div className="pd__ctaRow">
             <button className="pd__add" onClick={() => add(item.product_id, qty)}>
               เพิ่มลงตะกร้า
@@ -109,7 +109,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* รายละเอียด/สเปกใช้ <details> เพื่อไม่ต้องมี Hook เพิ่ม */}
+          {/* รายละเอียด/สเปก */}
           <details className="pd__details" open>
             <summary>รายละเอียดสินค้า</summary>
             <div className="pd__detailsBody">
@@ -130,8 +130,6 @@ export default function ProductDetailPage() {
           </details>
         </div>
       </div>
-
-      {/* ส่วนสินค้าที่เกี่ยวข้อง “ตัดทิ้ง” เพื่อไม่เรียก API แปลก ๆ (หลีกเลี่ยง 404) */}
     </div>
   );
 }

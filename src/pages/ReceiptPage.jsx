@@ -24,7 +24,7 @@ const paymentKey = (v) => {
 };
 const thb = (n) => `฿${Number(n || 0).toFixed(2)}`;
 
-/* === normalize ชื่อสถานะจาก backend ให้เข้ากับ OrderTracking.jsx === */
+/* normalize สถานะสำหรับ OrderTracking */
 const mapStatus = (s) => {
   const k = String(s || "").toLowerCase();
   if (k === "received" || k === "new" || k === "created") return "placed";
@@ -34,7 +34,6 @@ const mapStatus = (s) => {
   return k || "placed";
 };
 
-/* polling */
 const TERMINAL_STATES = new Set(["delivered", "completed", "cancelled"]);
 const REFRESH_MS = 10_000;
 
@@ -43,12 +42,12 @@ export default function ReceiptPage() {
   const orderId = new URLSearchParams(search).get("order");
   const [data, setData] = useState(null);
 
-  /* โหลดครั้งแรก (กันแคช + normalize) */
+  /* โหลดครั้งแรก */
   useEffect(() => {
     (async () => {
       try {
         if (!orderId) throw new Error("no id");
-        const json = await get(`/orders/${encodeURIComponent(orderId)}?t=${Date.now()}`); // { order, items }
+        const json = await get(`/orders/${encodeURIComponent(orderId)}?t=${Date.now()}`);
         const order = json.order || {};
         const items = Array.isArray(json.items) ? json.items : [];
 
@@ -64,7 +63,7 @@ export default function ReceiptPage() {
           status: mapStatus(order.status || "placed"),
           method: methodRaw,
           items,
-          total: Number(order.total_price || 0)
+          total: Number(order.total_price || 0),
         });
       } catch {
         try {
@@ -84,10 +83,9 @@ export default function ReceiptPage() {
     })();
   }, [orderId]);
 
-  /* polling ทุก 10 วิ (กันแคช + normalize) */
+  /* polling สถานะ */
   useEffect(() => {
     if (!data?.id) return;
-
     let alive = true;
     let timerId = null;
 
@@ -101,7 +99,6 @@ export default function ReceiptPage() {
         const items = Array.isArray(json.items) ? json.items : [];
 
         if (!alive) return;
-
         setData((prev) => ({
           ...(prev || {}),
           id: order.order_id ?? prev?.id,
@@ -111,24 +108,13 @@ export default function ReceiptPage() {
           items,
           total: Number(order.total_price ?? order.total ?? prev?.total ?? 0),
         }));
-
-        const nextStatusStr = mapStatus(order.status || "");
-        if (TERMINAL_STATES.has(nextStatusStr) && timerId) {
-          clearInterval(timerId);
-        }
-      } catch {
-        // ignore
-      }
+      } catch {/* ignore */}
     };
 
     tick();
     timerId = setInterval(tick, REFRESH_MS);
-
-    return () => {
-      alive = false;
-      if (timerId) clearInterval(timerId);
-    };
-  }, [data?.id]); // ไม่ต้องใส่ data.status เพื่อไม่ให้รีเซ็ต interval บ่อย
+    return () => { alive = false; if (timerId) clearInterval(timerId); };
+  }, [data?.id]);
 
   if (!data) return <div className="container py-4">กำลังโหลด...</div>;
 
@@ -158,31 +144,36 @@ export default function ReceiptPage() {
           </div>
         </div>
 
+        {/* ตาราง 3 คอลัมน์นิ่ง */}
         <div className="rc__table">
-          <div className="rc__thead">
-            <span>รายการ</span>
-            <span>จำนวน</span>
-            <span>ราคา</span>
+          <div className="rc__row rc__thead">
+            <span className="rc__col-name">รายการ</span>
+            <span className="rc__col-qty">จำนวน</span>
+            <span className="rc__col-price">ราคา</span>
           </div>
 
-        {data.items.map((i, idx) => (
-            <div className="rc__tr" key={idx}>
-              <span>{i.name}</span>
-              <span>{i.quantity}</span>
-              <span>{thb(Number(i.price) * Number(i.quantity))}</span>
+          {data.items.map((i, idx) => (
+            <div className="rc__row rc__tr" key={idx}>
+              <span className="rc__col-name">{i.name}</span>
+              <span className="rc__col-qty">{i.quantity}</span>
+              <span className="rc__col-price">
+                {thb(Number(i.price) * Number(i.quantity))}
+              </span>
             </div>
           ))}
 
-          <div className="rc__tfoot">
-            <span>ยอดรวม</span>
-            <span />
-            <b>{thb(data.total)}</b>
+          <div className="rc__row rc__tfoot">
+            <span className="rc__col-name">ยอดรวม</span>
+            <span className="rc__col-qty" />
+            <b className="rc__col-price">{thb(data.total)}</b>
           </div>
         </div>
 
         <div className="rc__actions">
           <a href="/wallet" className="btn-ghost">กลับ</a>
-          <button className="btn-primary" onClick={() => window.print()}>พิมพ์</button>
+          <button className="rc-btn-primary" onClick={() => window.print()}>
+            พิมพ์
+          </button>
         </div>
       </div>
     </div>

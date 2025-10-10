@@ -1,85 +1,186 @@
-import { useEffect, useState } from "react";
-import { get, post, patch, del } from "../lib/api";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import "./AddressModal.css";
 
-export default function AddressModal({ onClose, onUpdated }) {
-  const [list, setList] = useState([]);
-  const [form, setForm] = useState({
-    full_name: "",
-    phone: "",
-    line1: "",
-    line2: "",
-    subdistrict: "",
-    district: "",
-    province: "",
-    postcode: "",
-    is_default: true,
+export default function AddressModal({
+  open = false,
+  onClose,
+  onSubmit,
+  initialValue = {},
+}) {
+  const overlayRef = useRef(null);
+  const [data, setData] = useState({
+    name: initialValue.name || "",
+    phone: initialValue.phone || "",
+    line1: initialValue.line1 || "",
+    street: initialValue.street || "",
+    subdistrict: initialValue.subdistrict || "",
+    district: initialValue.district || "",
+    province: initialValue.province || "",
+    postcode: initialValue.postcode || "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    get("/addresses").then(setList);
-  }, []);
+    setData({
+      name: initialValue.name || "",
+      phone: initialValue.phone || "",
+      line1: initialValue.line1 || "",
+      street: initialValue.street || "",
+      subdistrict: initialValue.subdistrict || "",
+      district: initialValue.district || "",
+      province: initialValue.province || "",
+      postcode: initialValue.postcode || "",
+    });
+  }, [initialValue, open]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && onClose?.();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const clickOverlay = (e) => {
+    if (e.target === overlayRef.current) onClose?.();
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newAddr = await post("/addresses", form);
-    setList([...list, newAddr]);
-    onUpdated(newAddr);
-    onClose();
+  const canSubmit = useMemo(() => {
+    return (
+      data.name.trim() &&
+      data.phone.trim() &&
+      data.line1.trim() &&
+      data.subdistrict.trim() &&
+      data.district.trim() &&
+      data.province.trim() &&
+      String(data.postcode || "").trim()
+    );
+  }, [data]);
+
+  const handleChange = (key) => (e) => {
+    setData((s) => ({ ...s, [key]: e.target.value }));
   };
 
-  const setDefault = async (id) => {
-    await patch(`/addresses/${id}/default`, {});
-    const updated = list.map((a) => ({ ...a, is_default: a.address_id === id }));
-    setList(updated);
-    onUpdated(updated.find(a => a.address_id === id));
-  };
+  async function submit() {
+    if (!canSubmit || submitting) return;
+    try {
+      setSubmitting(true);
+      await onSubmit?.(data);
+      onClose?.();
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
-  const removeAddr = async (id) => {
-    await del(`/addresses/${id}`);
-    setList(list.filter(a => a.address_id !== id));
-  };
+  if (!open) return null;
 
   return (
-    <div className="addr-modal">
-      <div className="addr-box">
-        <h3>ที่อยู่จัดส่ง</h3>
-        <button className="close-btn" onClick={onClose}>✖</button>
+    <div className="am__overlay" ref={overlayRef} onMouseDown={clickOverlay}>
+      <section
+        className="am"
+        role="dialog"
+        aria-modal="true"
+        aria-label="เพิ่มที่อยู่จัดส่ง"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <header className="am__header">
+          <h3 className="am__title">📦 เพิ่มที่อยู่จัดส่ง</h3>
+          <button className="am__x" onClick={onClose} aria-label="ปิด">✕</button>
+        </header>
 
-        {list.length > 0 && (
-          <div className="addr-list">
-            {list.map((a) => (
-              <div key={a.address_id} className={`addr-item ${a.is_default ? "default" : ""}`}>
-                <div>
-                  <b>{a.full_name}</b> {a.phone}<br />
-                  {a.line1}, {a.subdistrict}, {a.district}, {a.province} {a.postcode}
-                </div>
-                <div className="addr-actions">
-                  {!a.is_default && (
-                    <button onClick={() => setDefault(a.address_id)}>ตั้งเป็นหลัก</button>
-                  )}
-                  <button onClick={() => removeAddr(a.address_id)}>ลบ</button>
-                </div>
-              </div>
-            ))}
+        <div className="am__body">
+          <div className="am__grid am__grid--2">
+            <div className="am__field">
+              <label className="am__label">ชื่อ-นามสกุล</label>
+              <input
+                className="am__input"
+                value={data.name}
+                onChange={handleChange("name")}
+                placeholder="เช่น อัครพนธ์ ใจดี"
+              />
+            </div>
+            <div className="am__field">
+              <label className="am__label">เบอร์โทร</label>
+              <input
+                className="am__input"
+                value={data.phone}
+                onChange={handleChange("phone")}
+                placeholder="เช่น 0812345678"
+              />
+            </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="addr-form">
-          <input name="full_name" placeholder="ชื่อ-นามสกุล" value={form.full_name} onChange={handleChange} required />
-          <input name="phone" placeholder="เบอร์โทร" value={form.phone} onChange={handleChange} required />
-          <input name="line1" placeholder="ที่อยู่ (เช่น บ้านเลขที่, อาคาร)" value={form.line1} onChange={handleChange} required />
-          <input name="line2" placeholder="ถนน / ซอย (ไม่บังคับ)" value={form.line2} onChange={handleChange} />
-          <input name="subdistrict" placeholder="ตำบล / แขวง" value={form.subdistrict} onChange={handleChange} required />
-          <input name="district" placeholder="อำเภอ / เขต" value={form.district} onChange={handleChange} required />
-          <input name="province" placeholder="จังหวัด" value={form.province} onChange={handleChange} required />
-          <input name="postcode" placeholder="รหัสไปรษณีย์" value={form.postcode} onChange={handleChange} required />
-          <button type="submit" className="btn-primary">เพิ่มที่อยู่</button>
-        </form>
-      </div>
+          <div className="am__field">
+            <label className="am__label">ที่อยู่ (บ้านเลขที่ / อาคาร)</label>
+            <input
+              className="am__input"
+              value={data.line1}
+              onChange={handleChange("line1")}
+              placeholder="เลขที่ / อาคาร / หมู่บ้าน / ชั้น / ห้อง"
+            />
+          </div>
+
+          <div className="am__field">
+            <label className="am__label">ถนน / ซอย</label>
+            <input
+              className="am__input"
+              value={data.street}
+              onChange={handleChange("street")}
+              placeholder="เช่น ถนนพหลโยธิน ซอย 15"
+            />
+          </div>
+
+          <div className="am__grid am__grid--3">
+            <div className="am__field">
+              <label className="am__label">ตำบล / แขวง</label>
+              <input
+                className="am__input"
+                value={data.subdistrict}
+                onChange={handleChange("subdistrict")}
+              />
+            </div>
+            <div className="am__field">
+              <label className="am__label">อำเภอ / เขต</label>
+              <input
+                className="am__input"
+                value={data.district}
+                onChange={handleChange("district")}
+              />
+            </div>
+            <div className="am__field">
+              <label className="am__label">จังหวัด</label>
+              <input
+                className="am__input"
+                value={data.province}
+                onChange={handleChange("province")}
+              />
+            </div>
+          </div>
+
+          <div className="am__field am__field--sm">
+            <label className="am__label">รหัสไปรษณีย์</label>
+            <input
+              className="am__input"
+              value={data.postcode}
+              onChange={handleChange("postcode")}
+              placeholder="เช่น 13000"
+              inputMode="numeric"
+            />
+          </div>
+        </div>
+
+        <footer className="am__footer">
+          <button className="am__btn am__btn--ghost" onClick={onClose}>
+            ❌ ยกเลิก
+          </button>
+          <button
+            className="am__btn am__btn--primary"
+            onClick={submit}
+            disabled={!canSubmit || submitting}
+          >
+            {submitting ? "กำลังบันทึก..." : "✅ เพิ่มที่อยู่"}
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }

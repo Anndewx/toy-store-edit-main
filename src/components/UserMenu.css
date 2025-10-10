@@ -1,24 +1,89 @@
-.um { position: relative; }
-.um__btn { background: transparent; border: 0; cursor: pointer; }
-.um__avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: #ffd166; color: #111; display: grid; place-items: center;
-  font-weight: 800; box-shadow: 0 6px 16px rgba(0,0,0,.18);
+/* ===== Theme ===== */
+:root{
+  --um-bg: #ffffff;
+  --um-border: #e5e7eb;
+  --um-shadow: 0 22px 48px rgba(2,6,23,.25);
+  --um-text: #0f172a;
+  --um-muted: #64748b;
+  --um-danger: #ef4444;
+  --um-grad1: #fff6f6;
+  --um-grad2: #ffffff;
 }
-.um__menu {
-  position: absolute; right: 0; top: 40px; background: #fff;
-  border: 1px solid #eee; border-radius: 12px; width: 240px; padding: 10px;
-  box-shadow: 0 16px 36px rgba(0,0,0,.15); z-index: 30;
-}
-.um__user { display: flex; gap: 10px; align-items: center; padding: 6px 6px 10px; border-bottom: 1px solid #eee; margin-bottom: 8px; }
-.um__avatar.big { width: 36px; height: 36px; font-size: 14px; }
-.um__name { font-weight: 700; }
-.um__email { font-size: 12px; color: #6b7280; }
-.um__logout { width: 100%; height: 36px; border: 0; border-radius: 10px; background: #ef4444; color: #fff; font-weight: 700; cursor: pointer; }
-.um__logout:hover { filter: brightness(.95); }
 
-/* แทรกเพิ่มท้ายไฟล์ src/components/UserMenu.css */
-.um__addr{
-  font-size: 12px; color:#475569;
-  margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+/* ===== Trigger ===== */
+.um { position: relative; }
+.um__btn { background: transparent; border: 0; cursor: pointer; padding: 0; line-height: 0; }
+.um__avatar {
+  width: 30px; height: 30px; border-radius: 999px;
+  display: grid; place-items: center; font-weight: 800;
+  color: #0f172a;
+  background: radial-gradient(120% 120% at 10% 10%, #fde68a, #fbbf24);
+  box-shadow: 0 6px 16px rgba(0,0,0,.18);
+  transition: transform .12s ease, filter .12s ease;
 }
+.um__avatar:hover { transform: translateY(-1px); filter: brightness(1.03); }
+.um__avatar.big { width: 44px; height: 44px; font-size: 14px; }
+
+/* ===== Panel ===== */
+.um__menu {
+  position: absolute;
+  right: 0; top: 44px;
+  width: 280px;
+  background: linear-gradient(180deg, var(--um-grad1), var(--um-grad2));
+  border: 1px solid var(--um-border);
+  border-radius: 16px;
+  padding: 12px 12px 14px;
+  box-shadow: var(--um-shadow);
+  color: var(--um-text);
+  z-index: 30;
+  animation: um-pop .16s ease-out;
+}
+
+/* Arrow */
+.um__menu::before{
+  content: ""; position: absolute; top: -8px; right: 18px;
+  width: 14px; height: 14px; background: var(--um-grad2);
+  border-left: 1px solid var(--um-border);
+  border-top: 1px solid var(--um-border);
+  transform: rotate(45deg);
+}
+
+/* Header user row */
+.um__user { display: flex; gap: 12px; align-items: center; padding: 6px 6px 12px; }
+.um__meta { min-width: 0; }
+.um__name  { font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um__email { font-size: 12px; color: var(--um-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.um__addr  { font-size: 12px; color:#475569; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.um__user + .um__status { border-top: 1px dashed var(--um-border); padding-top: 10px; margin: 2px 2px 12px; }
+
+/* Status (non-click, แค่แสดงผล) */
+.um__status{
+  display:flex; align-items:center; gap:8px;
+  font-size:12px; color:#0f172a; background:#f8fafc;
+  border:1px solid #eef2f7; border-radius: 10px; padding: 8px 10px;
+}
+.um__status .dot{
+  width:8px; height:8px; border-radius:999px; background:#22c55e; box-shadow:0 0 0 2px rgba(34,197,94,.2);
+}
+
+/* Logout only */
+.um__logout{
+  width: 100%; height: 44px;
+  border: 0; border-radius: 12px;
+  background: linear-gradient(180deg, #fb7185, #ef4444);
+  color: #fff; font-weight: 800; cursor: pointer;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, .25);
+  transition: transform .12s ease, filter .12s ease;
+}
+.um__logout:hover{ transform: translateY(-1px); filter: brightness(1.03); }
+.um__logout:active{ transform: translateY(0); }
+
+/* Interaction polish */
+.um__menu:focus-within, .um__menu:hover { border-color: #e2e8f0; }
+
+/* Keyframes */
+@keyframes um-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* a11y */
+.sr-only{ position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }

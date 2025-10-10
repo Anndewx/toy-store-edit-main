@@ -289,8 +289,9 @@ const styles = {
     position:fixed; inset:0; background:rgba(4,10,20,.35); backdrop-filter: blur(2px);
     animation: fadeIn .18s ease-out;
   }
+  /* ✅ เปลี่ยนขวา → ซ้าย */
   .ai-fab{
-    position:fixed; right:20px; bottom:20px; width:58px; height:58px; border-radius:999px;
+    position:fixed; left:20px; bottom:20px; width:58px; height:58px; border-radius:999px;
     border:none; cursor:pointer; z-index:9999; color:#fff;
     background: radial-gradient(120% 120% at 10% 10%, var(--ai-primary-2), var(--ai-primary));
     box-shadow: 0 14px 28px rgba(31,124,255,.38), 0 2px 8px rgba(0,0,0,.25);
@@ -300,8 +301,9 @@ const styles = {
   .ai-fab:active{ transform: translateY(0); filter: brightness(.98); }
   .ai-fab-icon{ font-size:22px; font-weight:800; }
 
+  /* ✅ เปลี่ยนขวา → ซ้าย */
   .ai-panel{
-    position:fixed; right:20px; bottom:92px; width:min(420px,92vw); max-height:82vh;
+    position:fixed; left:20px; bottom:92px; width:min(420px,92vw); max-height:82vh;
     display:flex; flex-direction:column; overflow:hidden; z-index:10000;
     background: linear-gradient(180deg, #101827 0%, #0b1424 64%);
     border:1px solid var(--ai-border); border-radius:18px;
