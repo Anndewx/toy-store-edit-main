@@ -126,3 +126,50 @@
   .ot__step:hover .ot__tip,
   .ot__step:focus-within .ot__tip{ transform: translateX(-50%) translateY(-2px); }
 }
+/* === รถพรีเมียม === */
+.ot__truck svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+  transition: transform 0.4s ease;
+}
+.ot__truck svg:hover {
+  transform: translateX(3px) scale(1.02);
+}
+
+/* อนิเมชันล้อหมุนเบา ๆ */
+.ot__truck svg circle:nth-of-type(4),
+.ot__truck svg circle:nth-of-type(5) {
+  animation: wheelRotate 1.8s linear infinite;
+  transform-origin: center;
+}
+@keyframes wheelRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+/* === รถการ์ตูนพรีเมียม === */
+.ot__truck svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+.ot__truck svg:hover {
+  transform: translateX(4px) scale(1.05);
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* ล้อหมุนเบา ๆ */
+.ot__truck svg circle:nth-of-type(6),
+.ot__truck svg circle:nth-of-type(7) {
+  animation: wheelSpin 2s linear infinite;
+  transform-origin: center;
+}
+@keyframes wheelSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* เพิ่มเอฟเฟกต์ส่องแสงตอน hover */
+.ot__truck svg rect[x="2"] {
+  transition: fill 0.3s ease;
+}
+.ot__truck svg:hover rect[x="2"] {
+  fill: #fde047; /* เหลืองสดขึ้นตอน hover */
+}

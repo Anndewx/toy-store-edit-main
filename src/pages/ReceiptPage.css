@@ -122,3 +122,58 @@
   transition: filter .15s ease;
 }
 .rc__actions .rc-btn-primary:hover { filter: brightness(0.9); }
+
+/* === ไอคอนรถ FaTruck === */
+.rc__head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.truck-icon {
+  font-size: 1.7rem;
+  color: #facc15; /* เหลืองพรีเมียม */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+  transition: transform 0.25s ease;
+}
+
+.truck-icon:hover {
+  transform: translateX(4px);
+}
+/* === ไอคอนใบเสร็จ FaReceipt === */
+.rc__head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.receipt-icon {
+  font-size: 1.6rem;
+  color: #1e3a8a; /* น้ำเงินเข้มดูมืออาชีพ */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.receipt-icon:hover {
+  transform: scale(1.1);
+  color: #facc15; /* เหลืองพรีเมียมตอน hover */
+}
+/* === ไอคอนถุงช้อปปิ้ง FaShoppingBag === */
+.rc__head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.bag-icon {
+  font-size: 1.7rem;
+  color: #111827; /* ดำพรีเมียม */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.bag-icon:hover {
+  transform: scale(1.1);
+  color: #facc15; /* เหลืองทองตอน hover */
+}
+

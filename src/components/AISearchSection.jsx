@@ -2,8 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import "../styles/ai.css";
 import { useCart } from "../context/CartContext";
 
-// ✅ ใช้ไฟล์รูปจาก public/images (ไม่ต้อง import)
-//    ให้คุณเอารูปไปวางที่: public/images/banner-main.jpg, banner-side1.jpg, banner-side2.jpg
 const MAIN_BANNER_URL = "/images/banner-main.jpg";
 const SIDE1_BANNER_URL = "/images/banner-side1.jpg";
 const SIDE2_BANNER_URL = "/images/banner-side2.jpg";
@@ -18,7 +16,7 @@ const fixImg = (url) => {
 const DEFAULT_BANNERS = [
   { title: "โปรโมชั่นพิเศษ", image_url: MAIN_BANNER_URL },
   { title: "Superhero Zone", image_url: SIDE1_BANNER_URL },
-  { title: "Game & Anime",   image_url: SIDE2_BANNER_URL },
+  { title: "Game & Anime", image_url: SIDE2_BANNER_URL },
 ];
 
 const CATEGORIES = [
@@ -28,10 +26,8 @@ const CATEGORIES = [
   { key: "gundam", label: "หุ่นยนต์", emoji: "🤖" },
 ];
 
-// ✅ เพิ่มตัวตรวจสอบความถูกต้องของ URL แบนเนอร์
 const isValidBannerUrl = (u) => {
   if (typeof u !== "string" || !u.trim()) return false;
-  // อนุญาตเฉพาะ http(s) แบบเต็ม หรือ path ที่ขึ้นต้นด้วย /images/
   if (/^https?:\/\//i.test(u)) return true;
   if (u.startsWith("/images/")) return true;
   return false;
@@ -46,7 +42,6 @@ export default function AISearchSection() {
   const [title, setTitle] = useState("แนะนำสำหรับคุณ");
   const { add } = useCart();
 
-  // โหลดแบนเนอร์ (fallback = public/images)
   useEffect(() => {
     (async () => {
       setLoadingHero(true);
@@ -57,17 +52,14 @@ export default function AISearchSection() {
           if (Array.isArray(data) && data.length) {
             const merged = DEFAULT_BANNERS.map((def, i) => {
               const api = data[i] || {};
-              // ❗ ใช้รูปจาก API ก็ต่อเมื่อเป็น URL ถูกต้องเท่านั้น ไม่งั้นใช้ default
-              const useUrl = isValidBannerUrl(api.image_url) ? api.image_url : def.image_url;
+              const useUrl = isValidBannerUrl(api.image_url)
+                ? api.image_url
+                : def.image_url;
               return { title: api.title || def.title, image_url: useUrl };
             });
             setHero(merged);
-          } else {
-            setHero(DEFAULT_BANNERS);
-          }
-        } else {
-          setHero(DEFAULT_BANNERS);
-        }
+          } else setHero(DEFAULT_BANNERS);
+        } else setHero(DEFAULT_BANNERS);
       } catch {
         setHero(DEFAULT_BANNERS);
       } finally {
@@ -76,7 +68,6 @@ export default function AISearchSection() {
     })();
   }, []);
 
-  // โหลดสินค้าแรกเข้า
   useEffect(() => {
     fetchProducts({ popular: 1 }, "แนะนำสำหรับคุณ");
   }, []);
@@ -131,7 +122,6 @@ export default function AISearchSection() {
 
   return (
     <>
-      {/* HERO — ใช้คลาสจาก ai.css */}
       <section className="heroLight">
         <div className="heroWrap">
           {loadingHero ? (
@@ -143,8 +133,16 @@ export default function AISearchSection() {
           ) : (
             <div className="heroGrid">
               {hero.map((b, i) => (
-                <div key={`hero-${i}`} className={i === 0 ? "heroMain" : "heroSide"}>
-                  <img src={b.image_url} alt={b.title} className="heroImg" draggable="false" />
+                <div
+                  key={`hero-${i}`}
+                  className={i === 0 ? "heroMain" : "heroSide"}
+                >
+                  <img
+                    src={b.image_url}
+                    alt={b.title}
+                    className="heroImg"
+                    draggable="false"
+                  />
                 </div>
               ))}
             </div>
@@ -152,7 +150,6 @@ export default function AISearchSection() {
         </div>
       </section>
 
-      {/* SEARCH BAR + ROW */}
       <section className="shopLight">
         <div className="shopWrap">
           <div className="sBar">
@@ -164,18 +161,28 @@ export default function AISearchSection() {
                 placeholder="ค้นหา: gundam"
               />
             </form>
-            <button className="sBtn" onClick={handleSearch}>Search</button>
+            <button className="sBtn" onClick={handleSearch}>
+              Search
+            </button>
           </div>
 
-          <ProductsRow title={title} loading={loading} items={items} onAdd={handleAdd} />
+          <ProductsRow
+            title={title}
+            loading={loading}
+            items={items}
+            onAdd={handleAdd}
+          />
         </div>
       </section>
 
-      {/* CATEGORY BUTTONS */}
       <section className="fabCats">
         <div className="fabWrap fabWrap--center">
           {CATEGORIES.map((c) => (
-            <button key={c.key} className="fabBtn" onClick={() => handleCategory(c.key)}>
+            <button
+              key={c.key}
+              className="fabBtn"
+              onClick={() => handleCategory(c.key)}
+            >
               <span className="em">{c.emoji}</span> {c.label}
             </button>
           ))}
@@ -202,24 +209,111 @@ function ProductsRow({ title, loading, items, onAdd }) {
       <div className="rHead">
         <div className="rTitle">{title}</div>
         <div className="rCtrl">
-          <button className="rArrow" onClick={() => scrollBy("left")} aria-label="ก่อนหน้า">‹</button>
-          <button className="rArrow" onClick={() => scrollBy("right")} aria-label="ถัดไป">›</button>
+          <button
+            className="rArrow"
+            onClick={() => scrollBy("left")}
+            aria-label="ก่อนหน้า"
+          >
+            ‹
+          </button>
+          <button
+            className="rArrow"
+            onClick={() => scrollBy("right")}
+            aria-label="ถัดไป"
+          >
+            ›
+          </button>
         </div>
       </div>
 
       <div className="rRail" ref={railRef}>
         {loading ? (
-          Array.from({ length: 6 }).map((_, i) => <div key={`skeleton-${i}`} className="rCard skeleton" />)
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={`skeleton-${i}`} className="rCard skeleton" />
+          ))
         ) : items.length ? (
           items.map((p) => (
-            <article key={p.id || `item-${p.name}`} className="rCard">
-              <div className="rThumb">
+            <article
+              key={p.id || `item-${p.name}`}
+              className="rCard"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
+              {/* ✅ ปรับ layout แบบมืออาชีพ */}
+              <div
+                className="rThumb"
+                style={{
+                  width: "100%",
+                  height: "230px",
+                  borderRadius: 14,
+                  overflow: "hidden",
+                  background: "#f6f7f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginBottom: "10px",
+                }}
+              >
                 {p.on_sale ? <span className="rBadge">SALE</span> : null}
-                <img src={p.img} alt={p.name} loading="lazy" />
+                <img
+                  src={p.img}
+                  alt={p.name}
+                  loading="lazy"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: "center",
+                    borderRadius: 14,
+                  }}
+                />
               </div>
-              <h3 className="rName" title={p.name}>{p.name}</h3>
-              <div className="rPrice">฿{Number(p.price).toFixed(2)}</div>
-              <button className="rAdd" onClick={() => onAdd(p)}>เพิ่มลงตะกร้า</button>
+
+              <div style={{ padding: "0 4px 8px" }}>
+                <h3
+                  className="rName"
+                  title={p.name}
+                  style={{
+                    fontSize: "1.05rem",
+                    fontWeight: 700,
+                    marginBottom: 4,
+                    textAlign: "center",
+                    color: "#222",
+                  }}
+                >
+                  {p.name}
+                </h3>
+                <div
+                  className="rPrice"
+                  style={{
+                    fontSize: "1rem",
+                    fontWeight: 600,
+                    textAlign: "center",
+                    marginBottom: 8,
+                    color: "#00994d",
+                  }}
+                >
+                  ฿{Number(p.price).toFixed(2)}
+                </div>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <button
+                    className="rAdd"
+                    onClick={() => onAdd(p)}
+                    style={{
+                      width: "85%",
+                      borderRadius: 10,
+                      padding: "8px 0",
+                      fontWeight: 600,
+                      background: "#00c04b",
+                    }}
+                  >
+                    เพิ่มลงตะกร้า
+                  </button>
+                </div>
+              </div>
             </article>
           ))
         ) : (

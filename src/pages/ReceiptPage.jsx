@@ -3,16 +3,17 @@ import { useLocation } from "react-router-dom";
 import "./ReceiptPage.css";
 import { get } from "../lib/api";
 import OrderTracking from "../components/OrderTracking";
+import { FaShoppingBag } from "react-icons/fa"; // ✅ เปลี่ยนเป็นไอคอนถุงช้อปปิ้ง
 
 const paymentLabel = (v) => {
   switch ((v || "").toLowerCase()) {
-    case "bank":      return "โอนธนาคาร";
-    case "cod":       return "เก็บเงินปลายทาง (COD)";
+    case "bank": return "โอนธนาคาร";
+    case "cod": return "เก็บเงินปลายทาง (COD)";
     case "other":
     case "promptpay": return "PromptPay (สแกน QR)";
     case "card":
-    case "credit":    return "บัตรเครดิต/เดบิต";
-    default:          return "—";
+    case "credit": return "บัตรเครดิต/เดบิต";
+    default: return "—";
   }
 };
 const paymentKey = (v) => {
@@ -108,7 +109,7 @@ export default function ReceiptPage() {
           items,
           total: Number(order.total_price ?? order.total ?? prev?.total ?? 0),
         }));
-      } catch {/* ignore */}
+      } catch { /* ignore */ }
     };
 
     tick();
@@ -129,7 +130,10 @@ export default function ReceiptPage() {
 
       <div className="rc__card">
         <div className="rc__head">
-          <h2 className="rc__title">ใบเสร็จรับเงิน</h2>
+          <div className="rc__head-left">
+            <FaShoppingBag className="bag-icon" /> {/* ✅ ไอคอนถุงช้อปปิ้ง */}
+            <h2 className="rc__title">ใบเสร็จรับเงิน</h2>
+          </div>
           <div className="rc__id">#{data.id}</div>
         </div>
 
@@ -144,7 +148,6 @@ export default function ReceiptPage() {
           </div>
         </div>
 
-        {/* ตาราง 3 คอลัมน์นิ่ง */}
         <div className="rc__table">
           <div className="rc__row rc__thead">
             <span className="rc__col-name">รายการ</span>

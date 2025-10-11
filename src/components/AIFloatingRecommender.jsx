@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useCart } from "../context/CartContext";               // เดิม
-import { fetchProducts, fetchRecommend } from "../lib/api";     // เดิม
+// AIFloatingRecommender.jsx
+// Strict filter: sale เฉพาะลดจริง, anime/gundam/superhero/game ใช้ category_slug เท่านั้น (ไม่ปนหมวด)
+
+import { useEffect, useMemo, useRef, useState, useTransition, memo } from "react";
+import { useCart } from "../context/CartContext";
+import { fetchProducts, fetchRecommend } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
-// ===== Local behavior (เดิม) ==================================================
+/* ---------- helpers เดิม + เพิ่ม predicate ที่เข้มงวด ---------- */
 const Behavior = {
   get() { try { return JSON.parse(localStorage.getItem("ai_behavior") || "{}"); } catch { return {}; } },
   set(d) { localStorage.setItem("ai_behavior", JSON.stringify(d)); },
@@ -12,253 +15,290 @@ const Behavior = {
   cart(p) { const b = this.get(); b.cart = [...(b.cart||[]), p.product_id]; this.set(b); }
 };
 
-// ===== Utilities ==============================================================
-function classNames(...xs){ return xs.filter(Boolean).join(" "); }
+const norm = (s="") => s.toString().toLowerCase().normalize("NFKC").trim();
+const classNames = (...xs)=> xs.filter(Boolean).join(" ");
 function productImage(p){
   const img = p.image_url || p.image || "";
-  if (!img) return "https://picsum.photos/seed/placeholder/160/160";
+  if (!img) return "https://picsum.photos/seed/placeholder/240/240";
   if (/^https?:/i.test(img)) return img;
   const path = img.startsWith("/") ? img : `/${img}`;
   return `${API_BASE}${path}`;
 }
 
-// ===== Skeleton (โหลดรายการระหว่างรอ) =========================================
-function SkeletonCard() {
+/* ✅ เข้มงวดเรื่องลดราคา */
+const ON_SALE_VALUES = new Set([1, "1", true, "true", "TRUE"]);
+function isOnSale(p){
+  const flag = ON_SALE_VALUES.has(p?.on_sale);
+  const byPrice = Number(p?.sale_price) > 0 && Number(p?.sale_price) < Number(p?.price);
+  return !!(flag || byPrice);
+}
+
+/* ✅ กรองหมวดแบบ “slug เท่านั้น” ไม่อิงชื่อสินค้า */
+function catOf(p){ return norm(p?.category_slug || ""); }
+function isCat(p, key){
+  const c = catOf(p);
+  // รองรับรูปแบบ slug หลายชั้น เช่น figure/anime, toy/gundam ฯลฯ
+  const has = (slug)=> new RegExp(`(^|/|\\b)${slug}(\\b|/|$)`).test(c);
+  switch(key){
+    case "anime":     return has("anime");
+    case "gundam":    return has("gundam");
+    case "superhero": return has("superhero");
+    case "game":      return has("game");
+    default:          return false;
+  }
+}
+
+/* ---------- UI ชิ้นส่วน (คงเดิม) ---------- */
+const SkeletonCard = memo(function SkeletonCard() {
   return (
-    <div style={styles.cardSkeleton}>
-      <div style={styles.skelThumb}/>
-      <div style={{display:"grid", gap:6}}>
-        <div style={styles.skelLine(120)}/>
-        <div style={styles.skelLine(90)}/>
-        <div style={styles.skelLine(70)}/>
+    <div className="ai-card ai-skel">
+      <div className="ai-thumb-wrap"><div className="ai-skel-thumb"/></div>
+      <div className="ai-info">
+        <div className="ai-skel-line" style={{width:180}}/>
+        <div className="ai-skel-line" style={{width:120}}/>
       </div>
-      <div style={{display:"grid", gap:8, alignContent:"center"}}>
-        <div style={styles.skelPill}/>
-        <div style={styles.skelBtn}/>
+      <div className="ai-cta">
+        <div className="ai-skel-pill" />
+        <div className="ai-skel-btn" />
       </div>
     </div>
   );
-}
+});
 
-// ===== Main Component =========================================================
+const TOPICS = [
+  { key:"foryou",    label:"สำหรับคุณ" },
+  { key:"trending",  label:"มาแรง" },
+  { key:"sale",      label:"ราคาพิเศษ" },
+  { key:"new",       label:"มาใหม่" },
+  { key:"anime",     label:"อนิเมะ" },
+  { key:"gundam",    label:"กันดั้ม" },
+  { key:"superhero", label:"ซูเปอร์ฮีโร่" },
+  { key:"game",      label:"เกม" },
+];
+
+const ProductCard = memo(function ProductCard({ p, onAdd }){
+  return (
+    <article className="ai-card" tabIndex={0}>
+      <div className="ai-thumb-wrap">
+        {isOnSale(p) ? <span className="ai-badge">SALE</span> : null}
+        <img alt={p.name} src={productImage(p)} className="ai-thumb" loading="lazy" />
+      </div>
+      <div className="ai-info">
+        <h3 className="ai-name" title={p.name}>{p.name}</h3>
+        <div className="ai-meta">
+          <span className="ai-cat">{p.category_slug || "other"}</span>
+        </div>
+      </div>
+      <div className="ai-cta">
+        <div className="ai-price">฿{Number(p.price).toFixed(2)}</div>
+        <button className="ai-add" onClick={()=>onAdd(p)}>เพิ่มลงตะกร้า</button>
+      </div>
+    </article>
+  );
+});
+
+/* ---------- คอมโพเนนต์หลัก (เน้นส่วนกรองที่เปลี่ยน) ---------- */
 export default function AIFloatingRecommender(){
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [baseProducts, setBaseProducts] = useState([]);
+
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [tags, setTags] = useState([]);
+  const [mode, setMode] = useState("foryou");
+  const [sortKey, setSortKey] = useState("ai");
+  const [budgetMax, setBudgetMax] = useState(null);
+  const [isPending, startTransition] = useTransition();
+
+  const [visible, setVisible] = useState(12);
+  const loadMoreRef = useRef(null);
   const panelRef = useRef(null);
   const searchRef = useRef(null);
+  const { add: addToRealCart } = useCart();
 
-  const { add: addToRealCart } = useCart();                     // เดิม
+  useEffect(() => { const t = setTimeout(() => setDebounced(query.trim()), 320); return () => clearTimeout(t); }, [query]);
 
-  // Debounce 380ms
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(query.trim()), 380);
-    return () => clearTimeout(t);
-  }, [query]);
+  useEffect(()=>{
+    if (!open || baseProducts.length) return;
+    (async()=>{
+      try{
+        const data = await fetchProducts();
+        setBaseProducts(Array.isArray(data) ? data : (data?.data || []));
+      }catch(e){ console.error(e); }
+    })();
+  },[open, baseProducts.length]);
 
-  // Load initial / server recommend
   useEffect(()=>{
     if (!open) return;
-    let ignore = false;
+    let ignore = false, controller = new AbortController();
     (async()=>{
-      try {
-        setLoading(true);
-        let data;
-        if (debounced) {
-          data = await fetchRecommend({ q: buildQuery(query, tags), limit: 12 });
-        } else {
-          // โหลดเริ่มต้น: สินค้ายอดนิยม/ล่าสุดจากระบบเดิม
-          data = await fetchProducts();
+      setLoading(true); setVisible(12);
+      try{
+        const data = debounced
+          ? await fetchRecommend({ q: debounced, limit: 36, signal: controller.signal })
+          : await fetchProducts({ signal: controller.signal });
+        if (!ignore){
+          const arr = Array.isArray(data) ? data : (data?.data || []);
+          setProducts(arr);
         }
-        if (!ignore) setProducts(Array.isArray(data) ? data : (data?.data || []));
-      } catch(e){
-        console.error("AI widget: fetch failed", e);
-      } finally {
-        setLoading(false);
-      }
+      }catch(e){ /* ignore */ }
+      setLoading(false);
     })();
-    return ()=>{ ignore = true; };
-  },[debounced, tags, open]);
+    return ()=>{ ignore = true; controller.abort(); };
+  },[debounced, open]);
 
-  // Focus ช่องค้นหาเมื่อเปิด
   useEffect(()=>{ if (open) setTimeout(()=> searchRef.current?.focus(), 10); }, [open]);
-
-  // Close on outside click + ESC
   useEffect(()=>{
     function onDocClick(e){ if (open && panelRef.current && !panelRef.current.contains(e.target)) setOpen(false); }
-    function onKey(e){ if (!open) return; if (e.key === "Escape") setOpen(false); if (e.key === "Enter") setQuery(q=>q.trim()); }
+    function onKey(e){ if (!open) return; if (e.key==="Escape") setOpen(false); if (e.key==="Enter") setQuery(q=>q.trim()); }
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
     return ()=>{ document.removeEventListener("mousedown", onDocClick); document.removeEventListener("keydown", onKey); };
   },[open]);
 
-  // Personalised ranking (ของเดิม)
-  const recommended = useMemo(()=>{
-    const q = (buildQuery(query, tags)||"").toLowerCase();
-    const budgetMatch = q.match(/(\d[\d,\.]*)/);
-    const budget = budgetMatch ? parseFloat(budgetMatch[1].replace(/[,\.]/g, "")) : null;
+  /* ✅ คำนวณหัวข้อที่ “มีสินค้า” เพื่อซ่อนหัวข้อว่าง */
+  const topicHasInventory = useMemo(()=>{
+    const pool = baseProducts.length ? baseProducts : products;
+    return {
+      sale: pool.some(isOnSale),
+      new:  pool.length>0,
+      trending: pool.length>0,
+      anime: pool.some(p => isCat(p,"anime")),
+      gundam: pool.some(p => isCat(p,"gundam")),
+      superhero: pool.some(p => isCat(p,"superhero")),
+      game: pool.some(p => isCat(p,"game")),
+    };
+  },[baseProducts, products]);
 
-    const wantGundam   = /(gundam|กันดั้ม)/.test(q);
-    const wantAnime    = /(anime|อนิเม|อนิเมะ)/.test(q);
-    const wantHero     = /(superhero|ฮีโร่|ซุปเปอร์ฮีโร่)/.test(q);
-    const wantGame     = /(game|เกม|gamer)/.test(q);
-    const giftMode     = /(ของขวัญ|gift)/.test(q);
-    const saleOnly     = /(ลดราคา|sale|on\s*sale)/.test(q);
+  const topics = useMemo(()=> TOPICS.filter(t=> t.key==="foryou" || topicHasInventory[t.key]), [topicHasInventory]);
 
+  /* ✅ ตัวกรอง “เข้มงวด” ตามที่ขอ */
+  const finalList = useMemo(()=>{
     let pool = products.slice();
-    if (wantGundam) pool = pool.filter(p => (p.category_slug||"").includes("gundam") || /gundam/i.test(p.name));
-    if (wantAnime)  pool = pool.filter(p => (p.category_slug||"").includes("anime")  || /anime|nendo|rem|asuka|izuku/i.test(p.name));
-    if (wantHero)   pool = pool.filter(p => (p.category_slug||"").includes("superhero") || /batman|stormtrooper|groot/i.test(p.name));
-    if (wantGame)   pool = pool.filter(p => (p.category_slug||"").includes("game") || /mario|halo/i.test(p.name));
-    if (budget !== null && !Number.isNaN(budget)) pool = pool.filter(p => Number(p.price) <= budget);
-    if (saleOnly) pool = pool.filter(p => p.on_sale === 1 || p.on_sale === true || p.on_sale === "1");
-    if (giftMode) pool = [...pool].sort((a,b)=> Math.abs(Number(a.price)-55) - Math.abs(Number(b.price)-55));
 
-    // score จากประวัติ
-    const b = Behavior.get();
-    if (b.viewed?.length) {
-      const viewed = products.filter(p=> b.viewed.includes(p.product_id));
-      const nameHints = new Map(), catHints = new Map();
-      viewed.forEach(v=>{
-        (v.name||"").split(/\s+/).forEach(t=> nameHints.set(t.toLowerCase(), (nameHints.get(t.toLowerCase())||0)+1));
-        catHints.set(v.category_slug, (catHints.get(v.category_slug)||0)+1);
-      });
-      const score = (p)=> (p.name||"").toLowerCase().split(/\s+/).reduce((s,t)=> s+(nameHints.get(t)||0),0)*2 + (catHints.get(p.category_slug)||0);
-      pool = [...pool].sort((a,b)=> score(b)-score(a));
+    // --- โหมดหลัก (strict) ---
+    switch(mode){
+      case "sale":      pool = pool.filter(isOnSale); break;
+      case "anime":     pool = pool.filter(p => isCat(p,"anime")   && !isCat(p,"gundam")); break; // กันไม่ให้กั้นดั้มปน
+      case "gundam":    pool = pool.filter(p => isCat(p,"gundam")); break;
+      case "superhero": pool = pool.filter(p => isCat(p,"superhero")); break;
+      case "game":      pool = pool.filter(p => isCat(p,"game")); break;
+      case "new":       pool = [...pool].sort((a,b)=> Number(b.product_id||0) - Number(a.product_id||0)); break;
+      case "trending":  pool = [...pool].sort((a,b)=> (isOnSale(b)?1:0)-(isOnSale(a)?1:0) || Number(a.price)-Number(b.price)); break;
+      default: break; // foryou → ไม่กรองหมวด
     }
 
-    if (!pool.length) pool = products.slice();
-    pool = [...pool].sort((a,b)=> (b.on_sale?1:0) - (a.on_sale?1:0) || Number(a.price)-Number(b.price));
+    // --- งบประมาณเร็ว ---
+    if (budgetMax != null) pool = pool.filter(p => Number(p.price) <= budgetMax);
 
-    return pool.slice(0, 8);
-  }, [products, query, tags]);
+    // --- จัดเรียงเพิ่มเติม ---
+    const sorters = {
+      ai: (a,b)=> (isOnSale(b)?1:0) - (isOnSale(a)?1:0) || Number(a.price)-Number(b.price),
+      "price-asc": (a,b)=> Number(a.price) - Number(b.price),
+      "price-desc": (a,b)=> Number(b.price) - Number(a.price),
+      "newest": (a,b)=> Number(b.product_id||0) - Number(a.product_id||0),
+    };
+    pool = [...pool].sort(sorters[sortKey] || sorters.ai);
+
+    return pool;
+  }, [products, mode, budgetMax, sortKey]);
 
   async function addToCart(product){
-    try {
+    try{
       await addToRealCart(product.product_id, 1);
       Behavior.cart(product);
       window.dispatchEvent(new Event("open-cart"));
-    } catch(e){
+    }catch(e){
       console.error("addToCart failed", e);
       alert("เพิ่มลงตะกร้าไม่สำเร็จ");
     }
   }
 
-  // ====== UI ==================================================================
   return (
     <>
-      {/* FLOAT BUTTON */}
-      <style>{styles.css}</style>
+      <style>{styles}</style>
       {open && <div aria-hidden className="ai-overlay" onClick={()=>setOpen(false)} />}
 
-      <button
-        aria-label="ผู้ช่วยแนะนำสินค้า"
-        className="ai-fab"
-        onClick={()=> setOpen(v=>!v)}
-        title="ผู้ช่วยแนะนำสินค้า (AI)"
-      >
+      <button className="ai-fab" aria-label="ผู้ช่วยแนะนำสินค้า" onClick={()=>setOpen(v=>!v)} title="ผู้ช่วยแนะนำสินค้า (AI)">
         <span className="ai-fab-icon">🧠</span>
       </button>
 
       {open && (
-        <section
-          ref={panelRef}
-          aria-live="polite"
-          aria-expanded={open}
-          role="dialog"
-          aria-label="ผู้ช่วยแนะนำสินค้า"
-          className="ai-panel"
-        >
-          {/* Header */}
+        <section ref={panelRef} className="ai-panel" role="dialog" aria-label="ผู้ช่วยแนะนำสินค้า" aria-expanded={open} aria-live="polite">
           <header className="ai-header">
             <div className="ai-logo">AI</div>
             <div className="ai-title">
               <div className="ai-title-main">ผู้ช่วยแนะนำสินค้า</div>
-              <div className="ai-title-sub">พิมพ์สิ่งที่อยากได้ เช่น “GUNDAM” หรือใช้ปุ่มลัด</div>
+              <div className="ai-title-sub">เลือกหัวข้อหรือพิมพ์ค้นหา แล้วกรองได้แบบเข้มงวด</div>
             </div>
-            <button className="ai-x" onClick={()=>setOpen(false)} title="ปิด">✕</button>
+            <button className="ai-x" onClick={()=>setOpen(false)}>✕</button>
           </header>
 
-          {/* Search */}
           <div className="ai-searchbar">
             <div className="ai-search-icon">🔎</div>
             <input
               ref={searchRef}
               value={query}
-              onChange={e=>setQuery(e.target.value)}
-              placeholder="อยากได้สินค้าแบบไหน... (เช่น gundam 60 ของขวัญ)"
+              onChange={(e)=> startTransition(()=> setQuery(e.target.value))}
+              placeholder="พิมพ์ชื่อสินค้า (เช่น deadpool) หรือกดหัวข้อด้านล่าง"
               className="ai-input"
             />
-            {query && <button className="ai-clear" onClick={()=>setQuery("")} aria-label="ล้างคำค้น">⌫</button>}
-            <button className="ai-primary" onClick={()=>setQuery(q=>q.trim())}>แนะนำ</button>
+            {query && <button className="ai-clear" onClick={()=>startTransition(()=>setQuery(""))} aria-label="ล้างคำค้น">⌫</button>}
+            <button className="ai-primary" onClick={()=>startTransition(()=>setQuery(q=>q.trim()))}>แนะนำ</button>
           </div>
 
-          {/* Quick chips */}
-          <div className="ai-chips">
-            {[
-              {t:"กันดั้ม ≤ 60",q:"gundam 60"},
-              {t:"อนิเมยอดนิยม",q:"anime gift"},
-              {t:"ซุปเปอร์ฮีโร่ลดราคา",q:"superhero sale"},
-              {t:"เกม ราคา ≤ 40",q:"game 40"},
-            ].map((c,i)=> (
-              <button key={i} className="ai-chip" onClick={()=>setQuery(c.q)}>{c.t}</button>
+          <div className="ai-tabs" role="tablist">
+            {topics.map(t=>(
+              <button key={t.key} role="tab" aria-selected={mode===t.key}
+                className={classNames("ai-tab", mode===t.key && "ai-tab--active")}
+                onClick={()=> startTransition(()=> setMode(t.key))}
+              >
+                {t.label}
+              </button>
             ))}
-            {/* toggle tags */}
-            {["sale","gift","anime","gundam","game"].map((t) => {
-              const active = tags.includes(t);
-              return (
-                <button
-                  key={t}
-                  className={classNames("ai-chip", active && "ai-chip--active")}
-                  onClick={()=> setTags(s => active ? s.filter(x=>x!==t) : [...s, t])}
-                >
-                  #{t}
-                </button>
-              );
-            })}
           </div>
 
-          {/* List */}
+          {/* แถบตัวกรองย่อ (งบ / จัดเรียง) */}
+          <div className="ai-filterbar">
+            <div className="ai-filter-group">
+              <span className="ai-filter-label">งบเร็ว:</span>
+              {[40,60,100].map(v=>(
+                <button key={v}
+                  className={classNames("ai-pill", budgetMax===v && "ai-pill--active")}
+                  onClick={()=> startTransition(()=> setBudgetMax(budgetMax===v?null:v))}
+                >≤ {v}</button>
+              ))}
+              <button className="ai-pill" onClick={()=> startTransition(()=> setBudgetMax(null))}>ล้างงบ</button>
+            </div>
+            <div className="ai-filter-group">
+              <span className="ai-filter-label">จัดเรียง:</span>
+              <select className="ai-select" value={sortKey} onChange={(e)=> startTransition(()=> setSortKey(e.target.value))}>
+                <option value="ai">AI แนะนำ</option>
+                <option value="price-asc">ราคาต่ำ → สูง</option>
+                <option value="price-desc">ราคาสูง → ต่ำ</option>
+                <option value="newest">มาใหม่ก่อน</option>
+              </select>
+            </div>
+            {isPending && <div className="ai-pending">กำลังคำนวณ…</div>}
+          </div>
+
+          {/* รายการสินค้า */}
           <div className="ai-content">
-            {loading ? (
-              <>
-                {Array.from({length:6}).map((_,i)=> <SkeletonCard key={i}/>)}
-              </>
-            ) : (
-              <>
-                {recommended.map(p => (
-                  <article key={p.product_id} className="ai-card" tabIndex={0}>
-                    <div className="ai-thumb-wrap">
-                      {p.on_sale ? <span className="ai-badge">SALE</span> : null}
-                      <img alt={p.name} src={productImage(p)} className="ai-thumb" />
+            {loading
+              ? Array.from({length:8}).map((_,i)=> <SkeletonCard key={i}/>)
+              : <>
+                  {finalList.slice(0, visible).map(p => <ProductCard key={p.product_id} p={p} onAdd={addToCart} />)}
+                  {finalList.length>visible && <div ref={loadMoreRef} className="ai-loadmore">กำลังโหลดเพิ่มเติม…</div>}
+                  {!finalList.length && (
+                    <div className="ai-empty">
+                      <div className="ai-empty-emoji">🔎</div>
+                      <div className="ai-empty-title">ยังไม่พบสินค้าที่ตรงใจ</div>
+                      <div className="ai-empty-sub">ลองเปลี่ยนหัวข้อหรือเพิ่มงบประมาณดูนะ</div>
                     </div>
-
-                    <div className="ai-info">
-                      <h3 className="ai-name" title={p.name}>{p.name}</h3>
-                      <div className="ai-meta">
-                        <span className="ai-cat">{p.category_slug || "other"}</span>
-                      </div>
-                    </div>
-
-                    <div className="ai-cta">
-                      <div className="ai-price">฿{Number(p.price).toFixed(2)}</div>
-                      <button className="ai-add" onClick={()=>addToCart(p)}>เพิ่มลงตะกร้า</button>
-                    </div>
-                  </article>
-                ))}
-
-                {!recommended.length && (
-                  <div className="ai-empty">
-                    <div className="ai-empty-emoji">🔎</div>
-                    <div className="ai-empty-title">ยังไม่พบสินค้าที่ตรงใจ</div>
-                    <div className="ai-empty-sub">ลองลดเงื่อนไขลงหรือเพิ่มงบประมาณดูนะ</div>
-                  </div>
-                )}
-              </>
-            )}
+                  )}
+                </>
+            }
           </div>
         </section>
       )}
@@ -266,154 +306,107 @@ export default function AIFloatingRecommender(){
   );
 }
 
-// ===== Helpers =================================================================
 function buildQuery(q, tags){
-  const t = (tags||[]).join(" ");
+  const t = (tags||[]).map(x=> x.startsWith("#")?x:`#${x}`).join(" ");
   return [q, t].filter(Boolean).join(" ").trim();
 }
 
-// ===== Inline Styles / CSS =====================================================
-const styles = {
-  css: `
-  :root{
-    --ai-bg: rgba(12, 19, 34, .78);
-    --ai-surface: rgba(16, 24, 40, .85);
-    --ai-border: rgba(255,255,255,.08);
-    --ai-text: #E8EEFC;
-    --ai-sub: #9db1d9;
-    --ai-primary: #1f7cff;
-    --ai-primary-2: #6aa6ff;
-    --ai-green: #22c55e;
-  }
-  .ai-overlay{
-    position:fixed; inset:0; background:rgba(4,10,20,.35); backdrop-filter: blur(2px);
-    animation: fadeIn .18s ease-out;
-  }
-  /* ✅ เปลี่ยนขวา → ซ้าย */
-  .ai-fab{
-    position:fixed; left:20px; bottom:20px; width:58px; height:58px; border-radius:999px;
-    border:none; cursor:pointer; z-index:9999; color:#fff;
-    background: radial-gradient(120% 120% at 10% 10%, var(--ai-primary-2), var(--ai-primary));
-    box-shadow: 0 14px 28px rgba(31,124,255,.38), 0 2px 8px rgba(0,0,0,.25);
-    transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
-  }
-  .ai-fab:hover{ transform: translateY(-2px); filter: brightness(1.05); }
-  .ai-fab:active{ transform: translateY(0); filter: brightness(.98); }
-  .ai-fab-icon{ font-size:22px; font-weight:800; }
+/* ============ Styles (เหมือนเวอร์ชันก่อน) ============ */
+const styles = `
+:root{
+  --ai-bg: rgba(12, 19, 34, .78);
+  --ai-surface: rgba(16, 24, 40, .85);
+  --ai-border: rgba(255,255,255,.08);
+  --ai-text: #E8EEFC;
+  --ai-sub: #9db1d9;
+  --ai-primary: #1f7cff;
+  --ai-primary-2: #6aa6ff;
+  --ai-green: #22c55e;
+  --ai-muted: #0c1627;
+}
+.ai-overlay{ position:fixed; inset:0; background:rgba(4,10,20,.35); backdrop-filter: blur(2px); animation: fadeIn .18s ease-out; }
+.ai-fab{
+  position:fixed; left:20px; bottom:20px; width:58px; height:58px; border-radius:999px;
+  border:none; cursor:pointer; z-index:9999; color:#fff;
+  background: radial-gradient(120% 120% at 10% 10%, var(--ai-primary-2), var(--ai-primary));
+  box-shadow: 0 14px 28px rgba(31,124,255,.38), 0 2px 8px rgba(0,0,0,.25);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.ai-fab:hover{ transform: translateY(-2px); filter: brightness(1.05); }
+.ai-fab:active{ transform: translateY(0); filter: brightness(.98); }
+.ai-fab-icon{ font-size:22px; font-weight:800; }
 
-  /* ✅ เปลี่ยนขวา → ซ้าย */
-  .ai-panel{
-    position:fixed; left:20px; bottom:92px; width:min(420px,92vw); max-height:82vh;
-    display:flex; flex-direction:column; overflow:hidden; z-index:10000;
-    background: linear-gradient(180deg, #101827 0%, #0b1424 64%);
-    border:1px solid var(--ai-border); border-radius:18px;
-    box-shadow: 0 20px 48px rgba(0,0,0,.45);
-    color: var(--ai-text); backdrop-filter: blur(10px);
-    animation: slideUp .18s ease-out;
-  }
+.ai-panel{
+  position:fixed; left:20px; bottom:92px; width:min(560px,94vw); max-height:84vh;
+  display:flex; flex-direction:column; overflow:hidden; z-index:10000;
+  background: linear-gradient(180deg, #101827 0%, #0b1424 64%);
+  border:1px solid var(--ai-border); border-radius:18px;
+  box-shadow: 0 20px 48px rgba(0,0,0,.45);
+  color: var(--ai-text); backdrop-filter: blur(10px);
+  animation: slideUp .18s ease-out;
+}
+.ai-header{ display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--ai-border); }
+.ai-logo{ width:30px; height:30px; border-radius:10px; font-weight:900; display:grid; place-items:center;
+  background: linear-gradient(145deg, var(--ai-primary), var(--ai-primary-2)); color:#fff; letter-spacing:.5px; }
+.ai-title-main{ font-size:15px; font-weight:800; }
+.ai-title-sub{ font-size:12px; color:var(--ai-sub); }
+.ai-x{ margin-left:auto; background:transparent; color:#b8c7e6; border:none; font-size:20px; cursor:pointer; padding:4px 6px; border-radius:8px; }
+.ai-x:hover{ background: rgba(255,255,255,.06); }
 
-  .ai-header{
-    display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid var(--ai-border);
-  }
-  .ai-logo{
-    width:30px; height:30px; border-radius:10px; font-weight:900; display:grid; place-items:center;
-    background: linear-gradient(145deg, var(--ai-primary), var(--ai-primary-2));
-    color:#fff; letter-spacing:.5px;
-  }
-  .ai-title-main{ font-size:15px; font-weight:800; }
-  .ai-title-sub{ font-size:12px; color:var(--ai-sub); }
+.ai-searchbar{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--ai-border); background: rgba(8,14,26,.5); }
+.ai-search-icon{ opacity:.8; }
+.ai-input{ flex:1; border-radius:12px; background:#0b1424; border:1px solid var(--ai-border); color:var(--ai-text); padding:10px 12px; outline:none; }
+.ai-input:focus{ border-color:#2a64ff; box-shadow: 0 0 0 2px rgba(42,100,255,.25); }
+.ai-clear{ background:transparent; color:#9fb1d5; border:1px solid var(--ai-border); border-radius:10px; padding:6px 8px; cursor:pointer; }
+.ai-primary{ background: var(--ai-primary); color:white; border:none; border-radius:12px; padding:10px 14px; font-weight:800; cursor:pointer; transition: filter .12s ease, transform .12s ease; }
+.ai-primary:hover{ filter:brightness(1.05); transform: translateY(-1px); }
 
-  .ai-x{
-    margin-left:auto; background:transparent; color:#b8c7e6; border:none; font-size:20px; cursor:pointer;
-    padding:4px 6px; border-radius:8px; transition: background .12s ease;
-  }
-  .ai-x:hover{ background: rgba(255,255,255,.06); }
+.ai-tabs{ display:flex; gap:8px; padding:10px 12px; border-bottom:1px solid var(--ai-border); flex-wrap:wrap; background: rgba(8,14,26,.35); }
+.ai-tab{ padding:8px 12px; border-radius:999px; border:1px solid var(--ai-border); background:#0c1627; color:#dbe7ff; font-size:12px; cursor:pointer; transition: transform .08s ease, background .12s ease; }
+.ai-tab:hover{ transform: translateY(-1px); background:#0e1a31; }
+.ai-tab--active{ background:#142a55; border-color:#2a64ff; box-shadow: 0 0 0 2px rgba(42,100,255,.18) inset; }
 
-  .ai-searchbar{
-    display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--ai-border);
-    background: rgba(8,14,26,.5);
-  }
-  .ai-search-icon{ opacity:.8; }
-  .ai-input{
-    flex:1; border-radius:12px; background:#0b1424; border:1px solid var(--ai-border);
-    color:var(--ai-text); padding:10px 12px; outline:none;
-  }
-  .ai-input:focus{ border-color:#2a64ff; box-shadow: 0 0 0 2px rgba(42,100,255,.25); }
-  .ai-clear{
-    background:transparent; color:#9fb1d5; border:1px solid var(--ai-border);
-    border-radius:10px; padding:6px 8px; cursor:pointer;
-  }
-  .ai-primary{
-    background: var(--ai-primary); color:white; border:none; border-radius:12px;
-    padding:10px 14px; font-weight:800; cursor:pointer; transition: filter .12s ease, transform .12s ease;
-  }
-  .ai-primary:hover{ filter:brightness(1.05); transform: translateY(-1px); }
+.ai-chips{ display:flex; gap:8px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--ai-border); }
+.ai-chip{ padding:8px 10px; border-radius:999px; border:1px solid var(--ai-border); background:#0c1627; color:#dbe7ff; font-size:12px; cursor:pointer; transition: transform .08s ease, background .12s ease; }
+.ai-chip:hover{ transform: translateY(-1px); background:#0e1a31; }
+.ai-chip--active{ background:#13274e; border-color:#274aa8; }
 
-  .ai-chips{ display:flex; gap:8px; flex-wrap:wrap; padding:10px 12px; border-bottom:1px solid var(--ai-border); }
-  .ai-chip{
-    padding:8px 10px; border-radius:999px; border:1px solid var(--ai-border);
-    background:#0c1627; color:#dbe7ff; font-size:12px; cursor:pointer;
-    transition: transform .08s ease, background .12s ease;
-  }
-  .ai-chip:hover{ transform: translateY(-1px); background:#0e1a31; }
-  .ai-chip--active{ background:#13274e; border-color:#274aa8; }
+.ai-filterbar{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--ai-border); background:rgba(8,14,26,.3); flex-wrap:wrap; }
+.ai-filter-group{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.ai-filter-label{ color:#b7c7e8; font-size:12px; }
+.ai-pill{ padding:6px 10px; font-size:12px; border-radius:999px; border:1px solid var(--ai-border); background:var(--ai-muted); color:#dbe7ff; cursor:pointer; }
+.ai-pill--active{ background:#13274e; border-color:#2a64ff; }
+.ai-select{ background:#0b1424; color:#dbe7ff; border:1px solid var(--ai-border); border-radius:10px; padding:6px 8px; }
+.ai-pending{ font-size:12px; color:#9db1d9; }
 
-  .ai-content{ padding:12px; overflow:auto; max-height: calc(82vh - 176px); display:grid; gap:10px; }
-  .ai-content::-webkit-scrollbar{ width:10px; }
-  .ai-content::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.09); border-radius:8px; }
+.ai-content{ padding:12px; overflow:auto; max-height: calc(84vh - 268px); display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:12px; }
+.ai-content::-webkit-scrollbar{ width:10px; }
+.ai-content::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.09); border-radius:8px; }
 
-  .ai-card{
-    display:grid; grid-template-columns: 72px 1fr auto; gap:12px; align-items:center;
-    padding:12px; border-radius:14px; background:#0f1625; border:1px solid var(--ai-border);
-    transition: transform .08s ease, border-color .12s ease, background .12s ease;
-  }
-  .ai-card:focus{ outline:none; border-color:#2a64ff; }
-  .ai-card:hover{ transform: translateY(-1px); background:#101a2f; }
+.ai-card{ display:grid; grid-template-columns: 92px 1fr auto; gap:12px; align-items:center; padding:12px; border-radius:14px; background:#0f1625; border:1px solid var(--ai-border); transition: transform .08s ease, border-color .12s ease, background .12s ease; will-change: transform; }
+.ai-card:hover{ transform: translateY(-1px); background:#101a2f; }
+.ai-thumb{ width:92px; height:92px; object-fit:cover; border-radius:12px; display:block; box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+.ai-badge{ position:absolute; top:6px; left:6px; font-size:10px; font-weight:900; background:#1ee3a2; color:#052119; border-radius:999px; padding:2px 6px; box-shadow:0 1px 6px rgba(0,0,0,.25); }
+.ai-info{ min-width:0; }
+.ai-name{ font-size:14px; font-weight:800; margin:0 0 6px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ai-meta{ font-size:12px; color:var(--ai-sub); display:flex; gap:8px; flex-wrap:wrap; }
+.ai-cat{ padding:2px 8px; border:1px solid var(--ai-border); border-radius:999px; background:#0c1627; }
+.ai-cta{ text-align:right; display:grid; gap:8px; align-content:center; }
+.ai-price{ font-weight:900; font-size:15px; }
+.ai-add{ background:var(--ai-green); color:#04110a; border:none; border-radius:10px; padding:8px 10px; font-weight:900; cursor:pointer; transition: transform .08s ease, filter .12s ease; }
+.ai-add:hover{ transform: translateY(-1px); filter:brightness(1.03); }
 
-  .ai-thumb-wrap{ position:relative; }
-  .ai-thumb{
-    width:72px; height:72px; object-fit:cover; border-radius:12px; display:block;
-    box-shadow: 0 4px 10px rgba(0,0,0,.25);
-  }
-  .ai-badge{
-    position:absolute; top:6px; left:6px; font-size:10px; font-weight:900;
-    background:#1ee3a2; color:#052119; border-radius:999px; padding:2px 6px; box-shadow:0 1px 6px rgba(0,0,0,.25);
-  }
+.ai-empty{ grid-column: 1/-1; text-align:center; color:var(--ai-sub); padding:24px 8px; }
+.ai-empty-emoji{ font-size:28px; }
+.ai-empty-title{ font-weight:800; margin-top:6px; color:var(--ai-text); }
+.ai-empty-sub{ font-size:12px; margin-top:2px; }
+.ai-loadmore{ grid-column: 1/-1; text-align:center; padding:12px; color:#9db1d9; }
 
-  .ai-info{ min-width:0; }
-  .ai-name{ font-size:14px; font-weight:800; margin:0 0 6px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .ai-meta{ font-size:12px; color:var(--ai-sub); display:flex; gap:8px; flex-wrap:wrap; }
-  .ai-cat{ padding:2px 8px; border:1px solid var(--ai-border); border-radius:999px; background:#0c1627; }
+.ai-skel .ai-skel-thumb{ width:92px; height:92px; border-radius:12px; background:rgba(255,255,255,.06); }
+.ai-skel .ai-skel-line{ height:10px; border-radius:6px; background:rgba(255,255,255,.06); margin:6px 0; }
+.ai-skel .ai-skel-pill{ width:70px; height:18px; border-radius:999px; background:rgba(255,255,255,.06); }
+.ai-skel .ai-skel-btn{ width:110px; height:34px; border-radius:10px; background:rgba(255,255,255,.06); }
 
-  .ai-cta{ text-align:right; display:grid; gap:8px; align-content:center; }
-  .ai-price{ font-weight:900; font-size:15px; }
-  .ai-add{
-    background:var(--ai-green); color:#04110a; border:none; border-radius:10px; padding:8px 10px; font-weight:900; cursor:pointer;
-    transition: transform .08s ease, filter .12s ease;
-  }
-  .ai-add:hover{ transform: translateY(-1px); filter:brightness(1.03); }
-  .ai-add:active{ transform: translateY(0); }
-
-  .ai-empty{ text-align:center; color:var(--ai-sub); padding:24px 8px; }
-  .ai-empty-emoji{ font-size:28px; }
-  .ai-empty-title{ font-weight:800; margin-top:6px; color:var(--ai-text); }
-  .ai-empty-sub{ font-size:12px; margin-top:2px; }
-
-  /* Skeleton */
-  .ai-shimmer{ background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));
-               background-size: 200% 100%; animation: shimmer 1.2s infinite; }
-
-  @keyframes slideUp { from{ transform: translateY(8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
-  @keyframes fadeIn  { from{ opacity:0 } to { opacity:1 } }
-  @keyframes shimmer { from { background-position: 200% 0 } to { background-position: -200% 0 } }
-  `,
-
-  cardSkeleton: {
-    display:"grid", gridTemplateColumns:"72px 1fr auto", gap:12, alignItems:"center",
-    padding:12, borderRadius:14, background:"#0f1625", border:"1px solid rgba(255,255,255,.06)"
-  },
-  skelThumb: { width:72, height:72, borderRadius:12, background:"rgba(255,255,255,.06)" , boxShadow:"0 4px 10px rgba(0,0,0,.25)" , overflow:"hidden" , position:"relative" , },
-  skelLine: (w)=> ({ width:w, height:10, borderRadius:6, background:"rgba(255,255,255,.06)" }),
-  skelPill: { width:70, height:18, borderRadius:999, background:"rgba(255,255,255,.06)" },
-  skelBtn:  { width:110, height:34, borderRadius:10, background:"rgba(255,255,255,.06)" },
-};
+@keyframes slideUp { from{ transform: translateY(8px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+@keyframes fadeIn  { from{ opacity:0 } to { opacity:1 } }
+`;

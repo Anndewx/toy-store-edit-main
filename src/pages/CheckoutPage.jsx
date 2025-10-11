@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/CheckoutPage.jsx
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { createOrder } from "../lib/api";
@@ -18,11 +19,35 @@ export default function CheckoutPage() {
   const [other, setOther] = useState({ ref: "", paidAt: "", slip: null });
 
   const openPayModal = () => {
-    if (!items.length || processing) return;
+    if (!items?.length || processing) return;
     setShowPayModal(true);
   };
   const payloadOf = () =>
     paymentMethod === "bank" ? bank : paymentMethod === "cod" ? cod : other;
+
+  // ===== Helper numbers =====
+  const num = (v) => {
+    if (v === undefined || v === null) return 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  // ✅ รวมยอดแบบกันพลาด: ใช้ total จาก context ถ้ามี; ไม่งั้นรวมจาก items
+  const computedTotal = useMemo(() => {
+    const ctx = num(total);
+    if (ctx > 0) return ctx;
+
+    const list = Array.isArray(items) ? items : [];
+    return list.reduce((sum, it) => {
+      const qty = num(it.quantity ?? it.qty ?? 1);
+      const unit =
+        num(it.price) ||
+        num(it.unitPrice) ||
+        num(it.amount) ||
+        num(it.cost);
+      return sum + unit * (qty || 1);
+    }, 0);
+  }, [items, total]);
 
   // บันทึก lastOrder + map orderMethods
   const saveLocalOrder = (data, isDemo = false) => {
@@ -45,7 +70,7 @@ export default function CheckoutPage() {
   };
 
   async function confirmPayment() {
-    if (!items.length || processing) return;
+    if (!items?.length || processing) return;
     setProcessing(true);
 
     try {
@@ -53,7 +78,7 @@ export default function CheckoutPage() {
       if (resp?.ok && resp?.order_id) {
         const packed = {
           order_id: resp.order_id,
-          total: Number(resp.total || total || 0),
+          total: num(resp.total) || computedTotal,
           items:
             resp.items?.map((i) => ({
               name: i.name,
@@ -78,11 +103,11 @@ export default function CheckoutPage() {
       const demoId = `DEMO-${Date.now()}`;
       const packed = {
         order_id: demoId,
-        total: Number(total || 0),
-        items: items.map((i) => ({
+        total: computedTotal,
+        items: (items || []).map((i) => ({
           name: i.name,
-          quantity: i.quantity,
-          price: i.price,
+          quantity: i.quantity ?? i.qty ?? 1,
+          price: i.price ?? i.unitPrice ?? i.amount ?? 0,
         })),
       };
       saveLocalOrder(packed, true);
@@ -113,21 +138,32 @@ export default function CheckoutPage() {
         <div className="card-body">
           <h5>สรุปคำสั่งซื้อ</h5>
           <ul className="list-group list-group-flush">
-            {items.map((item) => (
-              <li
-                key={item.product_id}
-                className="list-group-item d-flex justify-content-between"
-              >
-                <span>
-                  {item.name} x {item.quantity}
-                </span>
-                <span>฿{(item.price * item.quantity).toFixed(2)}</span>
-              </li>
-            ))}
+            {(items || []).map((item) => {
+              const qty = num(item.quantity ?? item.qty ?? 1);
+              const unit =
+                num(item.price) ||
+                num(item.unitPrice) ||
+                num(item.amount) ||
+                0;
+              const line = unit * (qty || 1);
+              return (
+                <li
+                  key={item.product_id ?? item.id ?? item.name}
+                  className="list-group-item d-flex justify-content-between"
+                >
+                  <span>
+                    {item.name} x {qty}
+                  </span>
+                  <span>฿{line.toFixed(2)}</span>
+                </li>
+              );
+            })}
           </ul>
           <div className="mt-3 d-flex justify-content-between">
             <strong>ราคารวม:</strong>
-            <strong className="text-primary">฿{(total || 0).toFixed(2)}</strong>
+            <strong className="text-primary">
+              ฿{computedTotal.toFixed(2)}
+            </strong>
           </div>
         </div>
       </div>
@@ -143,7 +179,7 @@ export default function CheckoutPage() {
         <button
           className="btn btn-success flex-fill"
           onClick={openPayModal}
-          disabled={processing || !items.length}
+          disabled={processing || !items?.length}
         >
           {processing ? "กำลังดำเนินการ..." : "ยืนยันการชำระเงิน"}
         </button>

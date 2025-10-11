@@ -1,368 +1,158 @@
-/* ProductCard.css — Dark Gray Theme */
+/* ============================================
+   ProductCard.css — Final (Sure Overlay + Smooth)
+   ============================================ */
 
-.p-card {
-  background: #1a1a1a;
-  border: 1px solid #333;
-  color: #f5f5f5;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* ===== Card ===== */
+.p-card{
+  background:#1a1a1a;border:1px solid #333;color:#f5f5f5;border-radius:12px;
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 4px 12px rgba(0,0,0,.35);
+  transition:transform .2s ease,box-shadow .2s ease;
+  will-change: transform; transform: translateZ(0);
 }
+.p-card:hover{ transform: translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,.5); }
 
-.p-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+/* ===== Thumbnail (ภาพสินค้า) =====
+   - ทำ context ให้ badge อยู่บนรูปแบบชัวร์
+   - aspect-ratio ให้กรอบเท่ากันทุกใบ */
+.p-thumb{
+  position: relative;      /* ✅ สำคัญ */
+  z-index: 0;              /* ✅ ให้ลูกซ้อนทับได้ตาม z-index */
+  isolation: isolate;      /* ✅ กัน context ภายนอกมากวน */
+  display:block;width:100%;
+  aspect-ratio: 1 / 1;
+  overflow:hidden;background:#2a2a2a;border-bottom:1px solid #333;
+  transform: translateZ(0);
 }
-
-/* Thumbnail */
-.p-thumb {
-  position: relative;
-  display: block;
-  padding-top: 100%; /* 1:1 Aspect ratio */
-  overflow: hidden;
-  background: #2a2a2a;
+.p-thumb img{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+  z-index:1; display:block; backface-visibility:hidden;
+  transition: transform .25s ease-out;
 }
+.p-card:hover .p-thumb img{ transform: scale(1.04); }
 
-.p-thumb img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-  padding: 10px;
-}
-
-.p-card:hover .p-thumb img {
-  transform: scale(1.05);
-}
-
-/* Badges */
+/* ===== Badges (SALE / HOT) ===== */
 .p-badges {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;              /* ขยับลงเล็กน้อยให้บาลานซ์กับมุมโค้ง */
+  right: 60px;            /* ✅ ขยับเข้าซ้ายให้ไม่ชนขอบ */
   display: flex;
   flex-direction: column;
   gap: 6px;
+  z-index: 1000;          /* ลอยเหนือภาพชัวร์ */
+  pointer-events: none;
+  animation: fadeBadgeDown 0.5s ease-out both;
 }
-
+/* ป้ายแต่ละอัน */
 .badge {
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  color: #fff;
+  line-height: 1;
+  background: linear-gradient(135deg, #ff4757, #ff6b35);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),         /* เงาหลัก */
+    0 0 12px rgba(255, 107, 53, 0.6),     /* glow สีส้มอ่อน */
+    inset 0 0 4px rgba(255, 255, 255, 0.25); /* เพิ่มมิติขอบใน */
+  backdrop-filter: blur(4px);              /* เบลอพื้นหลังให้ดูมีมิติ */
+  -webkit-backdrop-filter: blur(4px);
+  transform: translateZ(0);
 }
 
+/* ป้ายเฉพาะประเภท */
 .badge-sale {
-  background: linear-gradient(135deg, #ff4757, #ff6348);
-  color: white;
-  animation: pulse 2s infinite;
+  background: linear-gradient(135deg, #ff4757, #ff6b35);
 }
 
 .badge-hot {
-  background: linear-gradient(135deg, #ffa502, #ff6348);
-  color: white;
+  background: linear-gradient(135deg, #ffa502, #ff6b35);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.8; }
-}
-
-/* Body */
-.p-body {
-  padding: 16px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.p-title {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 8px 0;
-  line-height: 1.4;
-  min-height: 40px;
-}
-
-.p-title a {
-  color: #f5f5f5;
-  text-decoration: none;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  transition: color 0.2s;
-}
-
-.p-title a:hover {
-  color: #ff6348;
-}
-
-/* Stock Status */
-.p-stock {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  padding: 6px 10px;
-  border-radius: 8px;
-  margin-bottom: 12px;
-  font-weight: 500;
-}
-
-.stock-icon {
-  font-size: 14px;
-}
-
-.p-stock.in-stock {
-  background: #1e3d2f;
-  color: #27ae60;
-}
-
-.p-stock.low-stock {
-  background: #4b3a1a;
-  color: #f1c40f;
-}
-
-.p-stock.out-of-stock {
-  background: #4a1a1a;
-  color: #e74c3c;
-}
-
-/* Price */
-.p-price {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 12px;
-  margin-top: auto;
-}
-
-.p-price .price {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ff6348;
-}
-
-.p-price .ori {
-  font-size: 14px;
-  color: #999;
-  text-decoration: line-through;
-}
-
-/* Button */
-.btn-primary {
-  width: 100%;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #ff6b35, #f46524);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #f46524, #ff6b35);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
-}
-
-.btn-primary:disabled {
-  background: #555;
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-/* Skeleton Loading */
-.p-card.skeleton .skeleton-thumb {
-  background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-}
-
-.skeleton-title,
-.skeleton-price,
-.skeleton-btn {
-  background: linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%);
-  background-size: 200% 100%;
-  animation: loading 1.5s infinite;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.skeleton-title { height: 40px; }
-.skeleton-price { height: 24px; width: 60%; }
-.skeleton-btn { height: 40px; margin-top: auto; }
-
-@keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* Grid Layout */
-.grid-products {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  padding: 20px 0;
-}
-
-@media (max-width: 1200px) {
-  .grid-products {
-    grid-template-columns: repeat(3, 1fr);
+/* เอฟเฟกต์ fade-in จากด้านบน */
+@keyframes fadeBadgeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
+.badge-sale{ background:linear-gradient(135deg,#ff4757,#ff6b35); }
+.badge-hot { background:linear-gradient(135deg,#ffa502,#ff6b35); }
 
-@media (max-width: 768px) {
-  .grid-products {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .grid-products {
-    grid-template-columns: 1fr;
-  }
+@keyframes fadeBadgeDown{
+  from{ opacity:0; transform: translateY(-10px); }
+  to  { opacity:1; transform: translateY(0); }
 }
 
-.p-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
+/* ===== Body ===== */
+.p-body{ padding:16px; flex:1; display:flex; flex-direction:column; }
+
+/* ชื่อสินค้า: ล็อกสูงเท่ากัน → ราคาไม่เบี้ยว */
+.p-title{
+  font-size:15px; font-weight:600; line-height:1.4;
+  min-height:42px; margin:0 0 8px 0;
+}
+.p-title a{
+  color:#fff; text-decoration:none;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.p-title a:hover{ color:#ffb84d; }
+
+/* สต็อก: ล็อกความสูงให้เท่ากัน */
+.p-stock{
+  display:flex; align-items:center; gap:6px; font-size:13px; font-weight:500;
+  padding:6px 10px; border-radius:8px; margin-bottom:12px; min-height:34px;
+}
+.p-stock.in-stock{ background:#1e3d2f; color:#27ae60; }
+.p-stock.low-stock{ background:#4b3a1a; color:#f1c40f; }
+.p-stock.out-of-stock{ background:#4a1a1a; color:#e74c3c; }
+
+/* ราคา: ชิดซ้าย + ความสูงคงที่ → เรียงตรงกันทั้งหมด */
+.p-price{
+  display:flex; align-items:baseline; gap:8px; justify-content:flex-start;
+  margin-top:auto; margin-bottom:10px; min-height:26px; text-align:left;
+}
+.p-price .price{ font-size:19px; font-weight:800; color:#ff6b35; }
+.p-price .ori  { font-size:14px; color:#999; text-decoration:line-through; }
+
+/* ปุ่มคู่: ลื่น, เท่ากันทุกใบ */
+.p-actions{ display:flex; gap:.6rem; }
+.p-actions .btn-primary, .p-actions .btn-buy-now{
+  flex:1; min-height:46px; border-radius:10px; font-weight:700; font-size:14px;
+  border:none; cursor:pointer; will-change: transform;
+  transition: transform .1s ease, box-shadow .2s ease, background-color .2s ease;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);
+}
+.btn-primary{ background:linear-gradient(135deg,#ff6b35,#f46524); color:#fff; }
+.btn-primary:hover:not(:disabled){ transform:translateY(-1px) scale(1.02); box-shadow:0 8px 22px rgba(255,107,53,.35); }
+.btn-buy-now{ background:#f7c600; color:#111; }
+.btn-buy-now:hover:not(:disabled){ background:#eab400; transform:translateY(-1px) scale(1.02); }
+
+.btn-primary:disabled, .btn-buy-now:disabled{
+  opacity:.55; cursor:not-allowed; transform:none; box-shadow:none;
 }
 
-.btn-buy-now {
-  flex: 1;
-  background-color: #f7c600; /* เหลืองธีม */
-  color: #000;
-  border: none;
-  padding: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+/* Skeleton */
+.p-card.skeleton .skeleton-thumb,
+.skeleton-title, .skeleton-price, .skeleton-btn{
+  background:linear-gradient(90deg,#2a2a2a 25%,#333 50%,#2a2a2a 75%);
+  background-size:200% 100%; animation:loading 1.5s infinite; border-radius:6px;
 }
+.skeleton-title{ height:40px; margin-bottom:8px; }
+.skeleton-price{ height:24px; width:60%; margin-bottom:8px; }
+.skeleton-btn{ height:44px; margin-top:auto; }
+@keyframes loading{ 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-.btn-buy-now:hover:not(:disabled) {
-  background-color: #eab400;
-}
-
-.btn-buy-now:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* ====== Actions layout ====== */
-.p-actions {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 0.8rem;
-}
-
-/* ให้ปุ่มในแผงนี้ยืดเท่ากัน */
-.p-actions .btn-primary,
-.p-actions .btn-buy-now {
-  flex: 1;
-  min-height: 44px;
-  border-radius: 10px;
-  font-weight: 700;
-  letter-spacing: .2px;
-  border: none;
-  cursor: pointer;
-  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease, background-color .2s ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
-}
-
-/* Hover / Active */
-.p-actions .btn-primary:hover:not(:disabled),
-.p-actions .btn-buy-now:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-.p-actions .btn-primary:active:not(:disabled),
-.p-actions .btn-buy-now:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* ====== Buy Now theme (เหลือง-ดำ) ====== */
-.btn-buy-now {
-  background: #f7c600;      /* เหลืองหลัก */
-  color: #111;
-}
-.btn-buy-now:hover:not(:disabled) { background: #eab400; }
-.btn-buy-now:focus-visible { outline: 2px solid #eab400; outline-offset: 2px; }
-
-/* ====== Disabled State (กันธีมเก่าทับ) ====== */
-.p-actions .btn-primary:disabled,
-.p-actions .btn-buy-now:disabled,
-.p-actions .btn-primary.is-disabled,
-.p-actions .btn-buy-now.is-disabled {
-  opacity: .55;
-  filter: grayscale(25%);
-  cursor: not-allowed;
-  pointer-events: none;   /* << สำคัญ: กดไม่ได้จริง */
-  box-shadow: none;
-  transform: none;
-}
-
-/* ปุ่มจัดวางคู่ */
-.p-actions {
-  display: flex;
-  gap: 0.6rem;
-  margin-top: 0.8rem;
-}
-
-.p-actions .btn-primary,
-.p-actions .btn-buy-now {
-  flex: 1;
-  min-height: 44px;
-  border-radius: 10px;
-  font-weight: 700;
-  letter-spacing: .2px;
-  border: none;
-  cursor: pointer;
-  transition: transform .06s ease, filter .2s ease, box-shadow .2s ease, background-color .2s ease;
-  box-shadow: 0 6px 18px rgba(0,0,0,.25);
-}
-
-.p-actions .btn-primary:hover:not(:disabled),
-.p-actions .btn-buy-now:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-.p-actions .btn-primary:active:not(:disabled),
-.p-actions .btn-buy-now:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-/* ซื้อเลย: ธีมเหลือง–ดำ */
-.btn-buy-now { background: #f7c600; color: #111; }
-.btn-buy-now:hover:not(:disabled) { background: #eab400; }
-.btn-buy-now:focus-visible { outline: 2px solid #eab400; outline-offset: 2px; }
-
-/* Disabled ให้จางและกดไม่ได้แน่นอน */
-.p-actions .btn-primary:disabled,
-.p-actions .btn-buy-now:disabled,
-.p-actions .btn-primary.is-disabled,
-.p-actions .btn-buy-now.is-disabled {
-  opacity: .55;
-  filter: grayscale(25%);
-  cursor: not-allowed;
-  pointer-events: none; /* หยุดคลิก 100% */
-  box-shadow: none;
-  transform: none;
-}
+/* Grid (เดิม) */
+.grid-products{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; padding:20px 0; }
+@media (max-width:1200px){ .grid-products{ grid-template-columns:repeat(3,1fr); } }
+@media (max-width:768px){  .grid-products{ grid-template-columns:repeat(2,1fr); gap:15px; } }
+@media (max-width:480px){  .grid-products{ grid-template-columns:1fr; } }

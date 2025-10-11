@@ -33,19 +33,11 @@ export default function ProductCard({ product, loading }) {
   }
   if (!product) return null;
 
-  const {
-    product_id,
-    name,
-    price,
-    original_price,
-    on_sale,
-  } = product;
+  const { product_id, name, price, original_price, on_sale } = product;
 
-  // ✅ รองรับหลายฟิลด์ และแปลงเป็นตัวเลขเสมอ
-  const stockRaw =
-    product?.stock ?? product?.quantity ?? product?.inventory_qty ?? 0;
+  const stockRaw = product?.stock ?? product?.quantity ?? product?.inventory_qty ?? 0;
   const stockNum = Number(stockRaw);
-  const isOOS = !(stockNum > 0); // true เมื่อ 0, "0", null, undefined, หรือติดลบ
+  const isOOS = !(stockNum > 0);
 
   const hasDiscount =
     on_sale === 1 || (original_price && Number(original_price) > Number(price));
@@ -77,7 +69,6 @@ export default function ProductCard({ product, loading }) {
 
   function handleBuyNow() {
     if (!requireLogin() || isOOS) return;
-    // ล้างตะกร้า → ใส่สินค้าชิ้นนี้ → ไปหน้า checkout (ทำใน CartContext.buyNow + navigate)
     buyNow(product_id, 1).then(() => navigate("/checkout"));
   }
 
@@ -88,11 +79,9 @@ export default function ProductCard({ product, loading }) {
           src={imgSrc}
           alt={name}
           loading="lazy"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = "/images/placeholder.jpg";
-          }}
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/images/placeholder.jpg"; }}
         />
+        {/* ป้ายลดราคา/เตือนสต็อก — อยู่ใน .p-thumb เสมอ เพื่อวางทับรูป */}
         <div className="p-badges">
           {hasDiscount && <span className="badge badge-sale">-{discountPercent}%</span>}
           {stockNum <= 5 && stockNum > 0 && <span className="badge badge-hot">เหลือน้อย</span>}
@@ -109,6 +98,7 @@ export default function ProductCard({ product, loading }) {
           <span className="stock-text">{stockText}</span>
         </div>
 
+        {/* ราคา: ชิดซ้ายเท่ากันทุกใบ (คุมด้วย CSS) */}
         <div className="p-price">
           <span className="price">฿{Number(price).toFixed(2)}</span>
           {hasDiscount && original_price && (
@@ -123,17 +113,14 @@ export default function ProductCard({ product, loading }) {
             className={`btn-primary ${isOOS ? "is-disabled" : ""}`}
             onClick={handleAddToCart}
             disabled={isOOS}
-            aria-disabled={isOOS}
           >
             {isOOS ? "สินค้าหมด" : "เพิ่มลงตะกร้า"}
           </button>
-
           <button
             type="button"
             className={`btn-buy-now ${isOOS ? "is-disabled" : ""}`}
             onClick={handleBuyNow}
             disabled={isOOS}
-            aria-disabled={isOOS}
             title={isOOS ? "สินค้าหมด" : "ซื้อเลย"}
           >
             ซื้อเลย
