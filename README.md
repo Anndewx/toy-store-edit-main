@@ -1,7 +1,5 @@
 # ระบบจัดการเว็บไซต์ขายของเล่นเพื่อการพาณิชย์ออนไลน์(Web-based Platform for Online Toys Sales Management)
 ## พัฒนาโดย: นายอัครพนธ์ และ นายศรัณย์กร 
-### บทนำ
-  โปรเจกต์นี้คือการพัฒนาระบบ E-commerce Platform สำหรับธุรกิจขายของเล่นออนไลน์ โดยมีเป้าหมายหลักคือการสร้างแพลตฟอร์มที่มีความ ปลอดภัย (ใช้ JWT), มี ประสิทธิภาพสูง, และมีระบบจัดการหลังบ้านที่สามารถ วิเคราะห์ข้อมูลยอดขาย ได้อย่างแม่นยำ ระบบนี้มุ่งเน้นการสร้างประสบการณ์ที่ดีให้กับผู้ใช้งานและอำนวยความสะดวกในการบริหารจัดการสินค้าและคำสั่งซื้อทั้งหมด
 
 ### วัตถุประสงค์หลัก
   1. เพื่อพัฒนาระบบเว็บไซต์ขายของเล่นออนไลน์ให้มี ประสิทธิภาพและมีความปลอดภัย
@@ -43,87 +41,11 @@ cd toy-store-edit-main/backend
 ```
 npm install
 ```
-### 2.2 ตั้งค่าฐานข้อมูล MySQL (สำคัญ)
-สร้างฐานข้อมูลชื่อ toy_store_db
-SQL
-### 1. ตาราง users: ข้อมูลผู้ใช้งานระบบ
+### Database
 ```
-CREATE TABLE users (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    email VARCHAR(255) NOT NULL UNIQUE, 
-    password_hash VARCHAR(255) NOT NULL,
-    full_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+  [Dowload SQL](https://github.com/Anndewx/toy-store-edit-main/raw/main/toy_store.sql
 ```
-### 2. ตาราง categories: หมวดหมู่สินค้า
-```
-CREATE TABLE categories (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL UNIQUE,
-    slug VARCHAR(255) NOT NULL UNIQUE 
-);
-```
-### 3. ตาราง products: ข้อมูลสินค้า
-```
-CREATE TABLE products (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    category_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
-    stock INT NOT NULL DEFAULT 0,
-    image_url VARCHAR(255),
-    is_promotion BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES categories(id) 
-);
-```
-### 4. ตาราง addresses: ที่อยู่จัดส่งของผู้ใช้
-```
-CREATE TABLE addresses (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    recipient_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    line1 VARCHAR(255) NOT NULL,
-    line2 VARCHAR(255),
-    district VARCHAR(100) NOT NULL,
-    province VARCHAR(100) NOT NULL,
-    postcode VARCHAR(10) NOT NULL,
-    is_default BOOLEAN DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-```
-### 5. ตาราง orders: บันทึกคำสั่งซื้อ
-```
-CREATE TABLE orders (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    shipping_address_id BIGINT NOT NULL,
-    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_amount DECIMAL(10, 2) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'Processing',
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (shipping_address_id) REFERENCES addresses(id)
-);
-```
-### 6. ตาราง order_items: รายละเอียดสินค้าในคำสั่งซื้อ
-```
-CREATE TABLE order_items (
-    order_id BIGINT NOT NULL,
-    product_id BIGINT NOT NULL,
-    quantity INT NOT NULL,
-    price_at_order DECIMAL(10, 2) NOT NULL,
-    PRIMARY KEY (order_id, product_id),
-    FOREIGN KEY (order_id) REFERENCES orders(id),
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
-```
-### 2.3ตั้งค่า Environment Variables (.env)
+### ตั้งค่า Environment Variables (.env)
 สร้างไฟล์ .env ในโฟลเดอร์ backend และใส่รายละเอียดการเชื่อมต่อฐานข้อมูล:
 ```
 DB_HOST=localhost
@@ -138,7 +60,7 @@ npm start
 ```
 เซิร์ฟเวอร์จะทำงานที่ http://localhost:8081
 
-### 3. ติดตั้ง Frontend
+### ติดตั้ง Frontend
 เข้าสู่โฟลเดอร์ Frontend:
 ```
 cd ..
