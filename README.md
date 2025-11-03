@@ -42,8 +42,9 @@ cd toy-store-edit-main/backend
 npm install
 ```
 ### Database
+ชื่อฐานข้อมูล: toy_store
 ```
-  [Dowload SQL](https://github.com/Anndewx/toy-store-edit-main/raw/main/toy_store.sql)
+  https://github.com/Anndewx/toy-store-edit-main/raw/main/toy_store.sql
 ```
 ### ตั้งค่า Environment Variables (.env)
 สร้างไฟล์ .env ในโฟลเดอร์ backend และใส่รายละเอียดการเชื่อมต่อฐานข้อมูล:
