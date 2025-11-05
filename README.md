@@ -53,7 +53,7 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=toy_store
-JWT_SECRET=your_secret_key_for_security
+JWT_SECRET=
 รัน Backend Server:
 ```
 ```
