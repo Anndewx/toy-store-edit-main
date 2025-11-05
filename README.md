@@ -47,7 +47,7 @@ npm install
   https://github.com/Anndewx/toy-store-edit-main/raw/main/toy_store.sql
 ```
 ### ตั้งค่า Environment Variables (.env)
-สร้างไฟล์ .env ในโฟลเดอร์ backend และใส่รายละเอียดการเชื่อมต่อฐานข้อมูล:
+ไฟล์ .env ในโฟลเดอร์ backend ใส่รายละเอียดการเชื่อมต่อฐานข้อมูล:
 ```
 DB_HOST=localhost
 DB_USER=root
