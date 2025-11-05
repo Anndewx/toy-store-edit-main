@@ -70,7 +70,7 @@ cd frontend
 ```
 npm install
 ```
-รัน Frontend Application:
+รัน Frontend:
 ```
 npm start
 ```
