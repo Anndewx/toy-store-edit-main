@@ -51,9 +51,8 @@ npm install
 ```
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=
+DB_PASS=        # ถ้า root ไม่มีรหัสให้เว้นว่างไว้
 DB_NAME=toy_store
-JWT_SECRET=
 รัน Backend Server:
 ```
 ```
