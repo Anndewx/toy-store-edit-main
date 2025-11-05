@@ -53,8 +53,8 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASS=        # ถ้า root ไม่มีรหัสให้เว้นว่างไว้
 DB_NAME=toy_store
-รัน Backend Server:
 ```
+รัน Backend Server:
 ```
 npm start
 ```
